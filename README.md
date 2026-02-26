@@ -4,98 +4,98 @@ Self-hosted AI agent gateway powered by `gemini-cli` via **ACP** (Agent Communic
 
 > Inspired by OpenClaw — bring the reasoning power of Gemini 3 to Telegram, WhatsApp and the Web.
 
-## Genèse & Motivation
+## Genesis & Motivation
 
-GeminiClaw est né d'un constat critique : de nombreux utilisateurs d'outils comme OpenClaw ont vu leurs comptes Google bannis pour violation des Conditions de Service (TOS). 
+GeminiClaw was born from a critical observation: many users of tools like OpenClaw have seen their Google accounts banned for violating Terms of Service (TOS).
 
-### Le Problème 
-L'utilisation de tokens Gemini via des flux OAuth non officiels (sur des comptes personnels "flat-rate") pour alimenter des agents tiers est strictement surveillée par Google. Cela a conduit à des suspensions massives, privant les utilisateurs de l'accès non seulement à Gemini, mais parfois à l'intégralité de leurs services Google (Gmail, Drive, etc.).
+### The Problem
+Using Gemini tokens via unofficial OAuth flows (on personal "flat-rate" accounts) to power third-party agents is strictly monitored by Google. This has led to massive suspensions, depriving users of access not only to Gemini, but sometimes to their entire Google services (Gmail, Drive, etc.).
 
-### La Solution GeminiClaw
-Contrairement aux approches par "scraping" ou OAuth non officiel, GeminiClaw s'appuie sur le **CLI officiel de Google** via le protocole expérimental **ACP (Agent Communication Protocol)**. 
-*   **Conformité** : Utilise les canaux de communication légitimes prévus par Google.
-*   **Sécurité** : Pas besoin de partager des secrets OAuth ou des clés API sensibles avec des serveurs tiers non vérifiés.
-*   **Pérennité** : Conçu pour s'aligner sur l'évolution de l'écosystème "agentique" de Google DeepMind.
+### The GeminiClaw Solution
+Unlike "scraping" or unofficial OAuth approaches, GeminiClaw relies on the **official Google CLI** via the experimental **ACP (Agent Communication Protocol)**.
+*   **Compliance**: Uses legitimate communication channels provided by Google.
+*   **Security**: No need to share OAuth secrets or sensitive API keys with unverified third-party servers.
+*   **Sustainability**: Designed to align with the evolution of Google DeepMind's "agentic" ecosystem.
 
-## Pourquoi GeminiClaw ?
+## Why GeminiClaw?
 
-GeminiClaw n'est pas qu'un simple wrapper d'API. C'est une plateforme de **supervision d'agents** conçue pour exploiter le plein potentiel des nouveaux modèles Gemini 3 de Google (Pro & Flash Preview).
+GeminiClaw is not just another API wrapper. It is an **agent supervision platform** designed to harness the full potential of Google's new Gemini 3 models (Pro & Flash Preview).
 
-*   **Raisonnement Visible (Thoughts)** : Accédez nativement à la "chaîne de pensée" (Chain of Thought) des modèles Gemini 3. L'IA explique son raisonnement avant de répondre.
-*   **Protocoles Standards (ACP & MCP)** : Utilise l'Agent Communication Protocol pour piloter le moteur de Google et le **Model Context Protocol (MCP)** pour connecter vos propres outils.
-*   **Boucles ReAct Autonomes** : L'agent gère intelligemment l'utilisation des outils (lecture de fichiers, exécution de commandes, recherche) de manière itérative sans intervention du serveur.
-*   **Privacy & Authentification** : Support complet du GCA (Google Cloud Auth) avec stockage local des sessions, garantissant une intégration gratuite et sécurisée.
+*   **Visible Reasoning (Thoughts)**: Natively access the "Chain of Thought" of Gemini 3 models. The AI explains its reasoning before responding.
+*   **Standard Protocols (ACP & MCP)**: Uses the Agent Communication Protocol to drive the Google engine and the **Model Context Protocol (MCP)** to connect your own tools.
+*   **Autonomous ReAct Loops**: The agent intelligently manages tool usage (file reading, command execution, search) iteratively without server intervention.
+*   **Privacy & Authentication**: Full support for GCA (Google Cloud Auth) with local session storage, ensuring a free and secure integration.
 
 ## Architecture
 
 ```
 gemini-claw/
 ├── packages/
-│   ├── core/           @geminiclaw/core       ← Superviseur ACP (Bridge vers gemini-cli)
-│   ├── gateway/        @geminiclaw/gateway    ← Hub WebSocket, Routage & Files d'attente
-│   ├── memory/         @geminiclaw/memory     ← Persistance SQLite (Transcripts & Sessions)
+│   ├── core/           @geminiclaw/core       ← ACP Supervisor (Bridge to gemini-cli)
+│   ├── gateway/        @geminiclaw/gateway    ← WebSocket Hub, Routing & Queuing
+│   ├── memory/         @geminiclaw/memory     ← SQLite Persistence (Transcripts & Sessions)
 │   ├── channels/       
 │   │   ├── telegram/   @geminiclaw/channel-telegram
 │   │   ├── whatsapp/   @geminiclaw/channel-whatsapp
 │   │   └── webchat/    @geminiclaw/channel-webchat
-│   ├── skills/         @geminiclaw/skills     ← Serveur MCP (Registre de compétences)
-│   └── dashboard/      @geminiclaw/dashboard  ← Interface Admin React (Agents & Logs)
+│   ├── skills/         @geminiclaw/skills     ← MCP Server (Skill Registry)
+│   └── dashboard/      @geminiclaw/dashboard  ← React Admin Interface (Agents & Logs)
 ├── config/
-│   └── agents.json     ← Configuration dynamique des agents & canaux
+│   └── agents.json     ← Dynamic configuration of agents & channels
 └── docker-compose.yml
 ```
 
 ## Quick Start
 
-### 1. Prérequis
-Vous devez avoir le CLI Gemini officiel installé globalement :
+### 1. Prerequisites
+You must have the official Gemini CLI installed globally:
 ```bash
 npm install -g @google/gemini-cli
 ```
 
-### 2. Installation Rapide
+### 2. Quick Installation
 
-Pour installer GeminiClaw automatiquement :
+To install GeminiClaw automatically:
 ```bash
 curl -fsSL https://geminiclaw.ai/install.sh | bash
 ```
 
-### 3. Utilisation du CLI
+### 3. Using the CLI
 
-Le CLI `geminiclaw` vous permet de configurer et de piloter vos agents :
+The `geminiclaw` CLI allows you to configure and drive your agents:
 
 ```bash
-# Configuration interactive (Clés API, Modèles par défaut)
+# Interactive configuration (API Keys, Default Models)
 geminiclaw configure
 
-# Démarrer les services en arrière-plan (Gateway & Dashboard)
+# Start services in the background (Gateway & Dashboard)
 geminiclaw start
 
-# Arrêter les services
+# Stop services
 geminiclaw stop
 ```
 
-### 4. Docker (Optionnel)
+### 4. Docker (Optional)
 
-Si vous préférez utiliser Docker :
+If you prefer using Docker:
 ```bash
 docker-compose up -d
 ```
 
 ### 5. Dashboard
-L'interface d'administration est disponible sur `http://localhost:5173/`. 
-Elle vous permet de :
-- Gérer vos agents en temps réel.
-- Voir les "Pensées" de l'IA lors des chats.
-- Surveiller la consommation des outils MCP.
+The administration interface is available at `http://localhost:5173/`.
+It allows you to:
+- Manage your agents in real-time.
+- View the AI's "Thoughts" during chats.
+- Monitor MCP tool consumption.
 
-## Fonctionnement Technique
+## Technical Operation
 
-GeminiClaw agit comme un **superviseur**. Pour chaque session utilisateur, il lance un processus `gemini --experimental-acp` en arrière-plan. 
-1. Le **Gateway** reçoit un message (ex: de Telegram).
-2. L'**AgentRuntime** délègue le prompt à l'**ACPBridge**.
-3. Le **SkillMcpServer** expose nos fonctions JavaScript (skills) au format MCP.
-4. L'agent Gemini 3 appelle nos outils MCP de manière autonome pour enrichir sa réponse.
+GeminiClaw acts as a **supervisor**. For each user session, it launches a `gemini --experimental-acp` process in the background.
+1. The **Gateway** receives a message (e.g., from Telegram).
+2. The **AgentRuntime** delegates the prompt to the **ACPBridge**.
+3. The **SkillMcpServer** exposes our JavaScript functions (skills) in MCP format.
+4. The Gemini 3 agent calls our MCP tools autonomously to enrich its response.
 
 ## License
 
