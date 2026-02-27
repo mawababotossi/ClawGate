@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3002/api';
+const API_BASE_URL = `http://${window.location.hostname}:3002/api`;
 
 export interface AgentConfig {
     name: string;

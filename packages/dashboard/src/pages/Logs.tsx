@@ -13,7 +13,7 @@ export function Logs() {
     const logsEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const eventSource = new EventSource('http://localhost:3002/api/logs/stream');
+        const eventSource = new EventSource(`http://${window.location.hostname}:3002/api/logs/stream`);
 
         eventSource.onmessage = (event) => {
             try {

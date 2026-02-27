@@ -31,7 +31,7 @@ export function WebChat() {
 
     const loadHistory = async () => {
         try {
-            const resp = await fetch(`http://localhost:3002/api/transcripts/webchat/${clientId.current}`);
+            const resp = await fetch(`http://${window.location.hostname}:3002/api/transcripts/webchat/${clientId.current}`);
             if (resp.ok) {
                 const history = await resp.json();
                 setMessages(history.map((m: any, i: number) => ({
