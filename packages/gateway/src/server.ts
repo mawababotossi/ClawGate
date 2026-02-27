@@ -80,12 +80,14 @@ async function main(): Promise<void> {
     }
 
     // WhatsApp
+    let waAdapter: any = null;
     if (config.channels['whatsapp']?.enabled) {
         const { WhatsAppAdapter } = await import('@geminiclaw/channel-whatsapp');
         const waCfg = config.channels['whatsapp'];
         const wa = new WhatsAppAdapter({
             mentionOnly: waCfg?.mentionOnly ?? false,
         });
+        waAdapter = wa;
         wa.connect(gateway as any);
         console.log('[geminiclaw] WhatsApp adapter connecting (scan QR if needed)...');
     }
@@ -148,6 +150,22 @@ async function main(): Promise<void> {
             authType,
             accountHint
         });
+    });
+
+    // API: WhatsApp Status & Actions
+    app.get('/api/channels/whatsapp/status', (req, res) => {
+        if (!waAdapter) {
+            return res.json({ status: 'disabled' });
+        }
+        res.json(waAdapter.getStatus());
+    });
+
+    app.post('/api/channels/whatsapp/logout', async (req, res) => {
+        if (!waAdapter) {
+            return res.status(400).json({ error: 'WhatsApp channel disabled' });
+        }
+        await waAdapter.logout();
+        res.json({ success: true });
     });
 
     // API: Get transcript

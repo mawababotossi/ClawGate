@@ -24,12 +24,46 @@ export interface WhatsAppAdapterOptions {
 export class WhatsAppAdapter {
     private sock: BaileysModule | null = null;
     private authDir: string;
+    private gatewayRef: IGateway | null = null;
+    private status: 'connecting' | 'qr' | 'connected' | 'disconnected' = 'disconnected';
+    private qrStr: string | null = null;
 
     constructor(private options: WhatsAppAdapterOptions = {}) {
         this.authDir = options.authDir ?? AUTH_DIR;
     }
 
+    getStatus() {
+        const connectedStatus = this.sock?.authState?.creds?.me ? 'connected' : this.status;
+        return {
+            status: connectedStatus === 'connected' ? 'connected' : this.status,
+            qr: this.qrStr
+        };
+    }
+
+    async logout() {
+        try {
+            if (this.sock) {
+                await this.sock.logout();
+            }
+        } catch (err) {
+            console.error('[whatsapp] logout error', err);
+        }
+        this.sock = null;
+        this.status = 'disconnected';
+        this.qrStr = null;
+
+        const { rmSync } = await import('node:fs');
+        if (existsSync(this.authDir)) {
+            rmSync(this.authDir, { recursive: true, force: true });
+        }
+
+        if (this.gatewayRef) {
+            setTimeout(() => this.startSocket(this.gatewayRef!), 2000);
+        }
+    }
+
     async connect(gateway: IGateway): Promise<void> {
+        this.gatewayRef = gateway;
         gateway.registerChannel(CHANNEL, async (peerId: string, text: string) => {
             if (!this.sock) return;
             try {
@@ -70,19 +104,28 @@ export class WhatsAppAdapter {
 
         this.sock.ev.on('creds.update', saveCreds);
 
+        this.status = 'connecting';
+        this.qrStr = null;
+
         this.sock.ev.on('connection.update', (update: BaileysModule) => {
             const { connection, lastDisconnect, qr } = update;
 
             if (qr) {
+                this.status = 'qr';
+                this.qrStr = qr;
                 console.log('\n[whatsapp] 📱 Scan the QR code above with WhatsApp > Linked Devices\n');
             }
 
             if (connection === 'close') {
+                this.status = 'disconnected';
+                this.qrStr = null;
                 const code = lastDisconnect?.error?.output?.statusCode;
                 const loggedOut = code === DisconnectReason?.loggedOut;
                 console.log('[whatsapp] Disconnected.', loggedOut ? 'Logged out.' : 'Reconnecting in 5s...');
                 if (!loggedOut) setTimeout(() => this.startSocket(gateway), 5000);
             } else if (connection === 'open') {
+                this.status = 'connected';
+                this.qrStr = null;
                 console.log('[whatsapp] ✅ Connected!');
             }
         });

@@ -1,0 +1,46 @@
+.channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.channel-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+}
+
+.channel-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.channel-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+}
+
+.qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.qr-box {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    display: inline-block;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
