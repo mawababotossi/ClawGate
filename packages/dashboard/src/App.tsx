@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar, TopBar } from './components';
-import { Dashboard, Agents, Sessions, WebChat, Logs, Channels, Settings } from './pages';
+import { Dashboard, Agents, Skills, Sessions, WebChat, Logs, Channels, Settings } from './pages';
 
 function App() {
   return (
@@ -13,6 +13,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/agents" element={<Agents />} />
+              <Route path="/skills" element={<Skills />} />
               <Route path="/chat" element={<WebChat />} />
               <Route path="/sessions" element={<Sessions />} />
               <Route path="/channels" element={<Channels />} />

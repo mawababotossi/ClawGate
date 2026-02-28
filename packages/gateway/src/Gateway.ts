@@ -628,6 +628,54 @@ export class Gateway implements IGateway {
         return { native, project };
     }
 
+    getOverviewStats(): { instances: number, sessions: number, cronJobs: number, tickInterval: number } {
+        const sessions = this.sessions.listAll().length;
+
+        let cronJobs = 0;
+        let tickInterval = 60; // Default fallback
+        for (const runtime of this.registry.getAll()) {
+            if (runtime.getConfig().heartbeat?.enabled) {
+                cronJobs++;
+                tickInterval = runtime.getConfig().heartbeat?.intervalMinutes || tickInterval;
+            }
+        }
+
+        return {
+            instances: 1, // Gateway itself for now, will be expanded in Instances page
+            sessions,
+            cronJobs,
+            tickInterval
+        };
+    }
+
+    listSessionsDetailed(): any[] {
+        const activeSessions = this.sessions.listAll();
+        return activeSessions.map(session => {
+            const transcript = this.transcripts.load(session.id);
+            let tokens = 0;
+            let actions = 0;
+
+            transcript.forEach(msg => {
+                if (msg.role === 'assistant' && (msg as any).actionCalls) {
+                    actions += (msg as any).actionCalls.length;
+                }
+                tokens += (msg.content?.length || 0) / 4; // Rough estimate
+            });
+
+            return {
+                key: session.id,
+                label: session.peerId,
+                kind: session.channel,
+                updated: session.updatedAt,
+                tokens: Math.round(tokens),
+                thinking: false,
+                verbose: 0,
+                reasoning: 0,
+                actions
+            };
+        });
+    }
+
     async shutdown(): Promise<void> {
         await this.registry.shutdown();
         this.sessions.close();

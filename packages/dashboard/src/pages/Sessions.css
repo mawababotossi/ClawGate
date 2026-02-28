@@ -1,0 +1,175 @@
+.sessions-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+.sessions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sessions-title h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.sessions-title p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.sessions-filters {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.filter-group label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.glass-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-size: 0.9rem;
+    min-width: 120px;
+    transition: border-color 0.2s;
+}
+
+.glass-input:focus {
+    border-color: var(--primary);
+}
+
+select.glass-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+}
+
+select.glass-input option {
+    background: var(--bg-dark);
+    color: var(--text-main);
+}
+
+.filter-checkboxes {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.filter-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    padding: 0 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+.filter-search input {
+    background: transparent;
+    border: none;
+    padding: 0.5rem 0;
+    min-width: 200px;
+}
+
+.ml-auto {
+    margin-left: auto;
+}
+
+.sessions-table-container {
+    overflow-x: auto;
+}
+
+.sessions-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.sessions-table th {
+    padding: 1rem 1.5rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.sessions-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.sessions-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sessions-table tr:last-child td {
+    border-bottom: none;
+}
+
+.badge-outline {
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.token-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 150px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    height: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.token-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    opacity: 0.3;
+}
+
+.token-text {
+    position: absolute;
+    right: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}

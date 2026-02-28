@@ -28,6 +28,12 @@ export interface AppStatus {
     status: string;
     authType: string;
     accountHint: string;
+    uptime?: number;
+    tickInterval?: number;
+    lastChannelsRefresh?: number;
+    instances?: number;
+    sessions?: number;
+    cron?: number;
 }
 
 export interface ProjectConfig {
@@ -113,6 +119,11 @@ export const api = {
 
     async getSkills(): Promise<{ native: any[], project: any[] }> {
         const response = await axios.get(`${API_BASE_URL}/skills`);
+        return response.data;
+    },
+
+    async getSessions(): Promise<any[]> {
+        const response = await axios.get(`${API_BASE_URL}/sessions`);
         return response.data;
     }
 };

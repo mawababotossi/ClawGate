@@ -1,7 +1,8 @@
-export * from './Dashboard';
-export * from './Agents';
-export * from './Sessions';
+export { Dashboard } from './Dashboard';
+export { Agents } from './Agents';
+export { Skills } from './Skills';
+export { Sessions } from './Sessions';
+export { WebChat } from './WebChat';
 export { Logs } from './Logs';
-export * from './WebChat';
-export * from './Channels';
-export * from './Settings';
+export { Channels } from './Channels';
+export { Settings } from './Settings';

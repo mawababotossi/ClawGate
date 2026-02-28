@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, MessageSquareCode, Settings, Terminal, Smartphone } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquareCode, Settings, Terminal, Smartphone, Wrench } from 'lucide-react';
 import './Sidebar.css';
 
 const navItems = [
     { path: '/', label: 'Overview', icon: LayoutDashboard },
     { path: '/agents', label: 'Agents', icon: Users },
+    { path: '/skills', label: 'Skills & Tools', icon: Wrench },
     { path: '/chat', label: 'Chat', icon: MessageSquareCode },
     { path: '/channels', label: 'Channels', icon: Smartphone },
     { path: '/sessions', label: 'Sessions', icon: MessageSquareCode },

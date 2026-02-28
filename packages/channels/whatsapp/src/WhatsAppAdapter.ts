@@ -91,8 +91,8 @@ export class WhatsAppAdapter {
                 if (!this.sock) return;
                 try {
                     const myJid = this.sock?.user?.id ? this.sock.user.id.split('@')[0].split(':')[0] + '@s.whatsapp.net' : '';
-                    const isSelf = peerId === myJid;
-                    const realJid = isSelf ? myJid : (this.peerToLastJid.get(peerId) || peerId);
+                    // For presence updates in self-chat, we must target the specific device LID, not the canonical self JID.
+                    const realJid = this.peerToLastJid.get(peerId) || peerId;
 
                     console.log(`[whatsapp-debug] activityCallback: type=${type} peerId=${realJid} (mapped from ${peerId})`);
 

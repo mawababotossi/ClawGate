@@ -1,7 +1,7 @@
 .sidebar {
     width: 280px;
     height: calc(100vh - 2rem);
-    margin: 1rem 0 1rem 1rem;
+    margin: 1rem 2rem 1rem 1rem;
     display: flex;
     flex-direction: column;
     position: sticky;
@@ -39,6 +39,7 @@
     margin: 0;
     background: linear-gradient(90deg, var(--primary), var(--secondary));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

@@ -49,7 +49,15 @@
             "allowedPermissions": [
                 "getCurrentTime",
                 "google_web_search",
-                "shell"
+                "shell",
+                "terminal",
+                "readMemoryFile",
+                "updateMemoryFile",
+                "delegate_task",
+                "schedule_task",
+                "list_tasks",
+                "remove_task",
+                "list_agents"
             ],
             "baseDir": "../../data/agents/main"
         },

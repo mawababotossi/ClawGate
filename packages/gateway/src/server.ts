@@ -161,10 +161,18 @@ async function main(): Promise<void> {
             accountHint = key.substring(0, 4) + '...' + key.substring(key.length - 4);
         }
 
+        const stats = gateway.getOverviewStats();
+
         res.json({
             status: 'Healthy',
             authType,
-            accountHint
+            accountHint,
+            uptime: process.uptime(),
+            tickInterval: stats.tickInterval,
+            lastChannelsRefresh: Date.now(), // Placeholder for now
+            instances: stats.instances,
+            sessions: stats.sessions,
+            cron: stats.cronJobs
         });
     });
 
@@ -241,6 +249,12 @@ async function main(): Promise<void> {
         const { channel, peerId } = req.params;
         const transcript = gateway.getTranscript(channel, peerId);
         res.json(transcript);
+    });
+
+    // API: List Sessions
+    app.get('/api/sessions', (req, res) => {
+        const sessions = gateway.listSessionsDetailed();
+        res.json(sessions);
     });
 
     // API: List agents

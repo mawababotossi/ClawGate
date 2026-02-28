@@ -60,4 +60,5 @@ export interface IGateway {
         activityCallback?: (peerId: string, type: ActivityType) => Promise<void>
     ): void;
     ingest(channel: string, peerId: string, text: string, attachments?: any[], metadata?: Record<string, any>): Promise<void>;
+    listSessionsDetailed(): any[];
 }
