@@ -30,6 +30,7 @@ export class WhatsAppAdapter {
     private qrStr: string | null = null;
     private processedMessages = new Set<string>();
     private peerToLastJid = new Map<string, string>();
+    private subscribedJids = new Set<string>();
 
     constructor(private options: WhatsAppAdapterOptions = {}) {
         this.authDir = options.authDir ?? AUTH_DIR;
@@ -94,8 +95,14 @@ export class WhatsAppAdapter {
                     const realJid = isSelf ? myJid : (this.peerToLastJid.get(peerId) || peerId);
 
                     console.log(`[whatsapp-debug] activityCallback: type=${type} peerId=${realJid} (mapped from ${peerId})`);
+
+                    if (!this.subscribedJids.has(realJid)) {
+                        await this.sock.presenceSubscribe(realJid);
+                        this.subscribedJids.add(realJid);
+                        console.log(`[whatsapp-debug] Subscribed to presence for ${realJid}`);
+                    }
+
                     const presence = type === 'typing' ? 'composing' : 'paused';
-                    await this.sock.presenceSubscribe(realJid);
                     await this.sock.sendPresenceUpdate(presence, realJid);
                     console.log(`[whatsapp-debug] sendPresenceUpdate(${presence}) successful`);
                 } catch (err) {
@@ -108,6 +115,7 @@ export class WhatsAppAdapter {
     }
 
     private async startSocket(gateway: IGateway): Promise<void> {
+        this.subscribedJids.clear();
         if (!existsSync(this.authDir)) {
             mkdirSync(this.authDir, { recursive: true });
         }
@@ -130,6 +138,8 @@ export class WhatsAppAdapter {
             printQRInTerminal: true,
             logger: { level: 'silent', trace: () => { }, debug: () => { }, info: () => { }, warn: () => { }, error: () => { }, fatal: () => { }, child: () => ({ level: 'silent', trace: () => { }, debug: () => { }, info: () => { }, warn: () => { }, error: () => { }, fatal: () => { }, child: () => ({}) }) },
             browser: ['GeminiClaw', 'Chrome', '1.0.0'],
+            markOnlineOnConnect: true,
+            shouldIgnoreJid: () => false,
         });
 
         this.sock.ev.on('creds.update', saveCreds);
@@ -158,6 +168,11 @@ export class WhatsAppAdapter {
                 this.status = 'connected';
                 this.qrStr = null;
                 console.log('[whatsapp] ✅ Connected!');
+
+                // Declare initial presence to enable sendPresenceUpdate
+                try {
+                    this.sock.sendPresenceUpdate('available');
+                } catch { /* ignore */ }
             }
         });
 

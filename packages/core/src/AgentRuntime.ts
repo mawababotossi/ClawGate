@@ -26,6 +26,7 @@ export class AgentRuntime extends EventEmitter {
     private sessionTypingThrottle: Map<string, number> = new Map();
     private bridgeLastUsed: Map<string, number> = new Map();
     private readonly BRIDGE_IDLE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+    private readonly TYPING_THROTTLE_MS = 3000; // Reduced to 3s for WhatsApp/WebChat visibility
     private gcInterval?: any;
 
     constructor(
@@ -159,6 +160,7 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
 
             await bridge.prompt(acpSessionId, promptText, (update) => {
                 if (update.sessionUpdate === 'agent_message_chunk') {
+                    this.emitTyping(msg.sessionId);
                     responseText += update.content.text;
                 } else if (update.sessionUpdate === 'agent_thought_chunk') {
                     this.emitTyping(msg.sessionId);
@@ -566,7 +568,7 @@ ${systemPrompt}
     private emitTyping(sessionId: string) {
         const now = Date.now();
         const last = this.sessionTypingThrottle.get(sessionId) || 0;
-        if (now - last > 10000) { // Throttled to every 10 seconds
+        if (now - last > this.TYPING_THROTTLE_MS) { // Throttled to every 3 seconds
             this.emit('agent_typing', { sessionId });
             this.sessionTypingThrottle.set(sessionId, now);
         }
