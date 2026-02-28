@@ -5,58 +5,35 @@
     padding-bottom: 2rem;
 }
 
-.sessions-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.sessions-title h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.sessions-title p {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.95rem;
-}
-
 .sessions-filters {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 
 .filter-group label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
 }
 
 .glass-input {
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     color: var(--text-main);
     padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     outline: none;
-    font-size: 0.9rem;
-    min-width: 120px;
-    transition: border-color 0.2s;
+    font-size: 0.85rem;
+    transition: all 0.2s;
 }
 
 .glass-input:focus {
     border-color: var(--primary);
+    background: rgba(0, 0, 0, 0.3);
 }
 
 select.glass-input {
@@ -66,110 +43,57 @@ select.glass-input {
     background-position: right 0.75rem center;
     background-size: 1em;
     padding-right: 2.5rem;
-}
-
-select.glass-input option {
-    background: var(--bg-dark);
-    color: var(--text-main);
-}
-
-.filter-checkboxes {
-    display: flex;
-    gap: 1.25rem;
-}
-
-.filter-search {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    padding: 0 0.75rem;
-    border-radius: var(--radius-sm);
-}
-
-.filter-search input {
-    background: transparent;
-    border: none;
-    padding: 0.5rem 0;
-    min-width: 200px;
-}
-
-.ml-auto {
-    margin-left: auto;
+    min-width: 140px;
 }
 
 .sessions-table-container {
-    overflow-x: auto;
-}
-
-.sessions-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    font-size: 0.9rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 
 .sessions-table th {
-    padding: 1rem 1.5rem;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
     background: rgba(0, 0, 0, 0.1);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
 }
 
 .sessions-table td {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
     vertical-align: middle;
-}
-
-.sessions-table tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
 }
 
 .sessions-table tr:last-child td {
     border-bottom: none;
 }
 
-.badge-outline {
-    border: 1px solid var(--border-color);
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0.15rem 0.5rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-}
-
-.text-center {
-    text-align: center;
+.sessions-table tr:hover td {
+    background: rgba(255, 255, 255, 0.01);
 }
 
 .token-bar-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 150px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: var(--radius-sm);
-    height: 18px;
-    position: relative;
-    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-full);
 }
 
 .token-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    opacity: 0.3;
+    border-radius: var(--radius-full);
 }
 
-.token-text {
-    position: absolute;
-    right: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+.badge-bool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }

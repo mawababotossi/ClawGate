@@ -6,8 +6,91 @@
     flex-direction: column;
 }
 
-.agents-page .page-header {
-    padding-bottom: 0.75rem;
+.section-title {
+    font-size: var(--text-2xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.status-badge {
+    font-size: var(--text-2xs);
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-healthy {
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.status-warning {
+    color: var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.status-danger {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.status-unknown {
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.form-field {
+    margin-bottom: 1.25rem;
+}
+
+.form-field-label {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+}
+
+.form-field-hint {
+    font-size: var(--text-2xs);
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state-icon {
+    opacity: 0.2;
+    margin-bottom: 1.25rem;
+}
+
+.empty-state-title {
+    color: var(--text-secondary);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-description {
+    font-size: var(--text-sm);
+    max-width: 320px;
 }
 
 .agents-split-layout {
@@ -250,10 +333,100 @@
     color: var(--text-primary);
 }
 
-.form-row.split-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+/* Permissions List */
+.permissions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.permission-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.permission-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--border-light);
+}
+
+.permission-item.active {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.permission-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.permission-name {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    font-family: monospace;
+    color: var(--text-secondary);
+}
+
+.permission-item.active .permission-name {
+    color: var(--primary);
+}
+
+.permission-desc {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-left: 0.75rem;
+}
+
+.permission-checkbox {
+    accent-color: var(--primary);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.tab-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Skills grid */
+.skills-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.skill-row {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.skill-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    background: rgba(99, 102, 241, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
 }
 
 /* ─── Files / Journals ────────────────────────────────────────────────────── */

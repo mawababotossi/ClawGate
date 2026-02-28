@@ -57,7 +57,11 @@
                 "schedule_task",
                 "list_tasks",
                 "remove_task",
-                "list_agents"
+                "list_agents",
+                "read_file",
+                "write_file",
+                "run_shell_command",
+                "network"
             ],
             "baseDir": "../../data/agents/main"
         },

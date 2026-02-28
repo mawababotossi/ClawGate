@@ -28,23 +28,20 @@ const CHANNEL_COLORS: Record<string, string> = {
     telegram: '#2AABEE',
     webchat: 'var(--primary)',
 };
+import { PageHeader } from '../components/PageHeader';
 
 // ─── Small helpers ──────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status?: string }) {
-    const map: Record<string, { color: string; bg: string }> = {
-        Healthy: { color: 'var(--success)', bg: 'rgba(16,185,129,.12)' },
-        Unresponsive: { color: 'var(--warning)', bg: 'rgba(245,158,11,.12)' },
-        Restarting: { color: 'var(--warning)', bg: 'rgba(245,158,11,.12)' },
-        Dead: { color: 'var(--danger)', bg: 'rgba(239,68,68,.12)' },
+    const map: Record<string, string> = {
+        Healthy: 'status-healthy',
+        Unresponsive: 'status-warning',
+        Restarting: 'status-warning',
+        Dead: 'status-danger',
     };
-    const s = map[status ?? ''] ?? { color: 'var(--text-muted)', bg: 'rgba(255,255,255,.05)' };
+    const statusClass = map[status ?? ''] ?? 'status-unknown';
     return (
-        <span style={{
-            fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.55rem',
-            borderRadius: 'var(--radius-full)', background: s.bg, color: s.color,
-            letterSpacing: '0.04em', textTransform: 'uppercase',
-        }}>
+        <span className={`status-badge ${statusClass}`}>
             {status ?? 'Unknown'}
         </span>
     );
@@ -52,12 +49,7 @@ function StatusBadge({ status }: { status?: string }) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
     return (
-        <div style={{
-            fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)',
-            textTransform: 'uppercase', letterSpacing: '0.1em',
-            marginBottom: '0.75rem', paddingBottom: '0.5rem',
-            borderBottom: '1px solid var(--border)',
-        }}>
+        <div className="section-title">
             {children}
         </div>
     );
@@ -67,22 +59,22 @@ function FormField({
     label, children, hint
 }: { label: string; children: React.ReactNode; hint?: string }) {
     return (
-        <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
+        <div className="form-field">
+            <label className="form-field-label">
                 {label}
             </label>
             {children}
-            {hint && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{hint}</p>}
+            {hint && <p className="form-field-hint">{hint}</p>}
         </div>
     );
 }
 
 function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <div style={{ opacity: 0.3, marginBottom: '1rem' }}>{icon}</div>
-            <h3 style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '0.4rem' }}>{title}</h3>
-            <p style={{ fontSize: '0.85rem', maxWidth: '280px' }}>{description}</p>
+        <div className="empty-state">
+            <div className="empty-state-icon">{icon}</div>
+            <h3 className="empty-state-title">{title}</h3>
+            <p className="empty-state-description">{description}</p>
         </div>
     );
 }
@@ -113,7 +105,7 @@ function OverviewTab({
 
             {/* Identity */}
             <SectionTitle>Identity</SectionTitle>
-            <div className="form-row split-form" style={{ marginBottom: '1rem' }}>
+            <div className="form-row split-form">
                 <FormField label="Agent Name" hint={isCreating ? 'Cannot be changed after creation.' : undefined}>
                     <input
                         className="form-input"
@@ -122,7 +114,6 @@ function OverviewTab({
                         placeholder="e.g. main"
                         required
                         disabled={!isCreating}
-                        style={{ opacity: isCreating ? 1 : 0.6 }}
                     />
                 </FormField>
                 <FormField label="Base Directory">
@@ -137,7 +128,7 @@ function OverviewTab({
 
             {/* Models */}
             <SectionTitle>Model Selection</SectionTitle>
-            <div className="form-row split-form" style={{ marginBottom: '0.75rem' }}>
+            <div className="form-row split-form">
                 <FormField label="Primary Model">
                     <select
                         className="form-select"
@@ -174,17 +165,17 @@ function OverviewTab({
 
             {/* Heartbeat */}
             <SectionTitle>Heartbeat</SectionTitle>
-            <div className="form-row split-form" style={{ marginBottom: '1rem' }}>
+            <div className="form-row split-form">
                 <FormField label="Enabled">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.4rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    <div style={{ padding: '0.4rem 0' }}>
+                        <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={formData.heartbeat?.enabled ?? false}
                                 onChange={e => setFormData({ ...formData, heartbeat: { ...(formData.heartbeat ?? {}), enabled: e.target.checked } })}
-                                style={{ accentColor: 'var(--primary)', width: '15px', height: '15px' }}
+                                className="permission-checkbox"
                             />
-                            Active
+                            <span style={{ fontSize: 'var(--text-sm)' }}>Active</span>
                         </label>
                     </div>
                 </FormField>
@@ -195,14 +186,13 @@ function OverviewTab({
                         onChange={e => setFormData({ ...formData, heartbeat: { ...(formData.heartbeat ?? {}), enabled: formData.heartbeat?.enabled ?? false, cron: e.target.value } })}
                         placeholder="0 8,20 * * * (UTC)"
                         disabled={!formData.heartbeat?.enabled}
-                        style={{ opacity: formData.heartbeat?.enabled ? 1 : 0.4 }}
                     />
                 </FormField>
             </div>
 
             {/* Auth */}
             <SectionTitle>Authentication</SectionTitle>
-            <div className="form-row split-form" style={{ marginBottom: '1rem' }}>
+            <div className="form-row split-form">
                 <FormField label="Auth Type">
                     <select
                         className="form-select"
@@ -222,7 +212,6 @@ function OverviewTab({
                         onChange={e => setFormData({ ...formData, apiKey: e.target.value })}
                         placeholder="Leave empty to use env variable"
                         disabled={formData.authType !== 'gemini-api-key'}
-                        style={{ opacity: formData.authType === 'gemini-api-key' ? 1 : 0.4 }}
                     />
                 </FormField>
             </div>
@@ -237,33 +226,27 @@ function OverviewTab({
                     marginBottom: '0.75rem',
                 }}>
                     <AlertTriangle size={14} style={{ color: 'var(--warning)', flexShrink: 0 }} />
-                    <span style={{ fontSize: '0.8rem', color: 'var(--warning)' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--warning)' }}>
                         No permissions granted — agent tools requiring authorization will be blocked.
                     </span>
                 </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1.5rem' }}>
+            <div className="permissions-list">
                 {ALL_PERMISSIONS.map(p => {
                     const active = granted.includes(p.id);
                     return (
-                        <label key={p.id} style={{
-                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)',
-                            border: `1px solid ${active ? 'rgba(99,102,241,0.3)' : 'var(--border)'}`,
-                            background: active ? 'rgba(99,102,241,0.06)' : 'transparent',
-                            cursor: 'pointer', transition: 'all 0.15s',
-                        }}>
+                        <label key={p.id} className={`permission-item ${active ? 'active' : ''}`}>
                             <input
                                 type="checkbox"
                                 checked={active}
                                 onChange={() => togglePermission(p.id)}
-                                style={{ accentColor: 'var(--primary)', width: '14px', height: '14px', flexShrink: 0 }}
+                                className="permission-checkbox"
                             />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: active ? 'var(--primary)' : 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                            <div className="permission-info">
+                                <span className="permission-name">
                                     {p.label}
                                 </span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.75rem' }}>{p.desc}</span>
+                                <span className="permission-desc">{p.desc}</span>
                             </div>
                             {active
                                 ? <CheckCircle2 size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
@@ -275,7 +258,7 @@ function OverviewTab({
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+            <div className="tab-actions">
                 <button type="button" className="btn btn-outline" onClick={onReload} disabled={isSaving}>
                     <RefreshCw size={14} /> Reload Config
                 </button>
@@ -343,7 +326,7 @@ function FilesTab({ agentName, memory }: { agentName: string; memory: any[] }) {
 
     if (memory.length === 0) {
         return (
-            <div className="tab-content animate-fade-in" style={{ height: '100%' }}>
+            <div className="tab-content animate-fade-in" style={{ height: '100%', display: 'flex' }}>
                 <EmptyState
                     icon={<FileText size={48} />}
                     title="No memory files found"
@@ -383,13 +366,13 @@ function FilesTab({ agentName, memory }: { agentName: string; memory: any[] }) {
                                     {activeFileData?.mtime && ` · modified ${formatTimeAgo(activeFileData.mtime)}`}
                                 </span>
                             </div>
-                            <button className="btn btn-outline" style={{ padding: '0.35rem 0.85rem', fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)' }} onClick={handleSave} disabled={isSaving || isLoading}>
+                            <button className="btn btn-sm btn-outline" onClick={handleSave} disabled={isSaving || isLoading}>
                                 {isSaving ? <Loader2 size={13} className="animate-spin" /> : 'Save'}
                             </button>
                         </div>
                         <div className="editor-content-wrapper">
                             {isLoading ? (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.5 }}>
+                                <div className="empty-state" style={{ height: '100%', opacity: 0.5 }}>
                                     <Loader2 size={24} className="animate-spin text-muted" />
                                 </div>
                             ) : (
@@ -403,7 +386,7 @@ function FilesTab({ agentName, memory }: { agentName: string; memory: any[] }) {
                         </div>
                     </>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                    <div className="empty-state" style={{ height: '100%', opacity: 0.5 }}>
                         Select a file to view and edit
                     </div>
                 )}
@@ -421,37 +404,27 @@ function ToolsTab({ agent }: { agent: AgentConfig }) {
     return (
         <div className="tab-content animate-fade-in">
             <SectionTitle>MCP Tool Access — geminiclaw-skills</SectionTitle>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            <p className="text-sm text-muted mb-4">
                 Tool access is controlled by <strong>Allowed Permissions</strong> in the Overview tab.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <div className="skills-grid">
                 {allTools.map(tool => {
                     const active = granted.includes(tool.id);
                     return (
-                        <div key={tool.id} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '0.7rem 1rem', borderRadius: 'var(--radius-md)',
-                            background: 'var(--bg-card)',
-                            border: `1px solid ${active ? 'rgba(99,102,241,0.2)' : 'var(--border)'}`,
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div key={tool.id} className="skill-row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div className="flex items-center gap-3">
                                 {active
                                     ? <CheckCircle2 size={15} style={{ color: 'var(--success)', flexShrink: 0 }} />
                                     : <ShieldOff size={15} style={{ color: 'var(--danger)', flexShrink: 0, opacity: 0.6 }} />
                                 }
                                 <div>
-                                    <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 600, color: active ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                                    <span className="permission-name" style={{ color: active ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                                         {tool.label}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.75rem' }}>{tool.desc}</span>
+                                    <span className="permission-desc">{tool.desc}</span>
                                 </div>
                             </div>
-                            <span style={{
-                                fontSize: '0.7rem', fontWeight: 600, padding: '0.2rem 0.55rem',
-                                borderRadius: 'var(--radius-full)', textTransform: 'uppercase',
-                                background: active ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.1)',
-                                color: active ? 'var(--success)' : 'var(--danger)',
-                            }}>
+                            <span className={`status-badge ${active ? 'status-healthy' : 'status-danger'}`}>
                                 {active ? 'Allowed' : 'Blocked'}
                             </span>
                         </div>
@@ -588,28 +561,24 @@ function ChannelsTab({ sessions }: { sessions: any[] }) {
             {Object.entries(channelGroups).map(([channel, chSessions]) => {
                 const color = CHANNEL_COLORS[channel] ?? 'var(--primary)';
                 return (
-                    <div key={channel} style={{ marginBottom: '1.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                    <div key={channel} className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            <span className="nav-group-label" style={{ padding: 0 }}>
                                 {channel}
                             </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>· {chSessions.length} session{chSessions.length > 1 ? 's' : ''}</span>
+                            <span className="text-xs text-muted">· {chSessions.length} session{chSessions.length > 1 ? 's' : ''}</span>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div className="flex flex-col gap-1">
                             {chSessions.map((s: any) => (
-                                <div key={s.key ?? s.id} style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '0.65rem 0.9rem', borderRadius: 'var(--radius-md)',
-                                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                                }}>
+                                <div key={s.key ?? s.id} className="skill-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
-                                        <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: color }}>
+                                        <span className="permission-name" style={{ color: color }}>
                                             {s.key ?? s.peerId ?? s.id}
                                         </span>
-                                        {s.label && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.6rem' }}>{s.label}</span>}
+                                        {s.label && <span className="permission-desc" style={{ marginLeft: '0.6rem' }}>{s.label}</span>}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    <div className="flex gap-4 text-xs text-muted">
                                         {s.tokens && <span>{s.tokens.toLocaleString()} tokens</span>}
                                         {s.updated && <span>{new Date(s.updated).toLocaleTimeString()}</span>}
                                     </div>
@@ -647,34 +616,28 @@ function CronTab({ agentName, jobs, onRemove }: {
     return (
         <div className="tab-content animate-fade-in">
             <SectionTitle>Scheduled Tasks — {jobs.length}</SectionTitle>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="flex flex-col gap-3">
                 {jobs.map((job: any) => (
-                    <div key={job.id} className="glass-panel" style={{ padding: '1rem 1.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                    <div key={job.id} className="glass-panel p-4">
+                        <div className="flex items-start justify-between mb-2">
                             <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-                                    <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-base font-bold text-primary">
                                         {job.name ?? job.id}
                                     </span>
                                     {job.status && (
-                                        <span style={{
-                                            fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem',
-                                            borderRadius: 'var(--radius-full)', textTransform: 'uppercase',
-                                            background: `${STATUS_COLOR[job.status] ?? 'var(--text-muted)'}18`,
-                                            color: STATUS_COLOR[job.status] ?? 'var(--text-muted)',
-                                        }}>
+                                        <span className={`status-badge ${STATUS_COLOR[job.status] ? 'status-' + job.status : 'status-unknown'}`}>
                                             {job.status}
                                         </span>
                                     )}
                                 </div>
-                                <code style={{ fontSize: '0.78rem', color: 'var(--primary)', background: 'rgba(99,102,241,0.08)', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-sm)' }}>
+                                <code className="monospace px-2 py-0.5 rounded text-xs bg-primary-dim text-primary">
                                     {job.cron}
                                 </code>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div className="flex gap-2">
                                 <button
-                                    className="btn btn-outline"
-                                    style={{ padding: '0.3rem 0.8rem', fontSize: '0.78rem', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.3)' }}
+                                    className="btn btn-sm btn-danger"
                                     onClick={() => onRemove(job.id)}
                                 >
                                     <Trash2 size={12} /> Remove
@@ -682,30 +645,24 @@ function CronTab({ agentName, jobs, onRemove }: {
                             </div>
                         </div>
                         {job.prompt && (
-                            <p style={{
-                                fontSize: '0.8rem', color: 'var(--text-muted)',
-                                background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem',
-                                borderRadius: 'var(--radius-sm)', margin: '0.5rem 0 0',
-                                fontFamily: 'monospace', lineHeight: 1.5,
-                                display: '-webkit-box', WebkitLineClamp: 3,
-                                WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                            }}>
+                            <p className="monospace text-xs text-muted p-3 rounded bg-dark" style={{ lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                 {job.prompt}
                             </p>
                         )}
                         {(job.next || job.last) && (
-                            <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.6rem' }}>
+                            <div className="flex gap-4 mt-3">
                                 {job.next && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                        <Clock size={11} style={{ color: 'var(--success)' }} />
-                                        Next: <span style={{ color: 'var(--text-secondary)' }}>{job.next}</span>
+                                    <div className="flex items-center gap-1.5 text-xs text-muted">
+                                        <Clock size={11} className="text-success" />
+                                        Next: <span className="text-secondary">{job.next}</span>
                                     </div>
                                 )}
                                 {job.last && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    <div className="flex items-center gap-1.5 text-xs text-muted">
                                         <GitBranch size={11} />
-                                        Last: <span style={{ color: 'var(--text-secondary)' }}>{job.last}</span>
+                                        Last: <span className="text-secondary">{job.last}</span>
                                     </div>
+
                                 )}
                             </div>
                         )}
@@ -855,36 +812,30 @@ export function Agents() {
     const selectedAgent = agents.find(a => a.name === selectedAgentName);
 
     return (
-        <div className="page-container agents-page">
-            {/* ── Page header ─────────────────────────────── */}
-            <div className="page-header" style={{ marginBottom: '0' }}>
-                <h1>Agents</h1>
-                <p>Manage agent workspaces, tools, and identities.</p>
-            </div>
+        <div className="agents-page">
+            <PageHeader
+                title="AI Agents"
+                description="Manage your AI personas, identities, and operational capabilities."
+                actions={
+                    <button className="btn btn-primary" onClick={handleCreateNew}>
+                        <Plus size={16} /> Create Agent
+                    </button>
+                }
+            />
 
             {/* ── Split layout ─────────────────────────────── */}
             <div className="agents-split-layout">
 
                 {/* Left: agent list */}
                 <div className="agents-navigation glass-panel">
-                    <div className="nav-header flex justify-between items-center p-3 border-b">
-                        <span className="font-bold text-sm uppercase tracking-wider text-muted">
-                            Agents ({agents.length})
-                        </span>
-                        <button
-                            className="icon-btn btn-primary"
-                            style={{ padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}
-                            onClick={handleCreateNew}
-                            title="New Agent"
-                        >
-                            <Plus size={14} /> New
-                        </button>
+                    <div className="nav-header p-4 border-b">
+                        <SectionTitle>All Agents — {agents.length}</SectionTitle>
                     </div>
 
                     <div className="agents-list">
                         {isLoading ? (
-                            <div className="flex justify-center p-4">
-                                <RefreshCw className="animate-spin" style={{ color: 'var(--primary)' }} size={20} />
+                            <div className="flex justify-center p-6">
+                                <Loader2 className="animate-spin text-muted" size={24} />
                             </div>
                         ) : (
                             agents.map(agent => (
@@ -893,20 +844,20 @@ export function Agents() {
                                     className={`agent-nav-item ${selectedAgentName === agent.name && !isCreating ? 'active' : ''}`}
                                     onClick={() => handleSelectAgent(agent.name)}
                                 >
-                                    <div className="agent-avatar bg-primary-dim" style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem' }}>
+                                    <div className="agent-avatar bg-primary-dim text-primary font-bold">
                                         {agent.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="agent-nav-info overflow-hidden">
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 600 }} className="truncate">{agent.name}</h4>
-                                        <span className="text-xs truncate" style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>{agent.model}</span>
+                                        <h4 className="truncate">{agent.name}</h4>
+                                        <span className="text-xs truncate text-muted monospace">{agent.model}</span>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', flexShrink: 0 }}>
+                                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
                                         {agent.name === 'main' && (
-                                            <span style={{ fontSize: '0.65rem', background: 'rgba(99,102,241,0.12)', color: 'var(--primary)', padding: '0.1rem 0.4rem', borderRadius: 'var(--radius-full)', fontWeight: 700, textTransform: 'uppercase' }}>
+                                            <span className="badge-bool" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--primary)' }}>
                                                 Default
                                             </span>
                                         )}
-                                        {agent.status && <StatusBadge status={agent.status} />}
+                                        <StatusBadge status={agent.status} />
                                     </div>
                                 </div>
                             ))
@@ -914,12 +865,12 @@ export function Agents() {
 
                         {isCreating && (
                             <div className="agent-nav-item active creating">
-                                <div className="agent-avatar bg-accent-dim" style={{ color: 'var(--success)' }}>
-                                    <Plus size={16} />
+                                <div className="agent-avatar bg-accent-dim text-success">
+                                    <Plus size={18} />
                                 </div>
                                 <div className="agent-nav-info">
-                                    <h4 style={{ fontSize: '0.9rem' }}>New Agent</h4>
-                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Unsaved</span>
+                                    <h4>New Agent</h4>
+                                    <span className="text-xs text-muted">Configuring...</span>
                                 </div>
                             </div>
                         )}
@@ -930,24 +881,24 @@ export function Agents() {
                 <div className="agent-details-panel glass-panel">
                     {(selectedAgentName || isCreating) && formData ? (
                         <>
-                            {/* Detail header */}
-                            <div className="details-header p-4 flex justify-between items-end" style={{ background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid var(--border)' }}>
+                            {/* Detail Panel Header */}
+                            <div className="nav-header p-4 flex justify-between items-end border-b" style={{ background: 'rgba(0,0,0,0.1)' }}>
                                 <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                                        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, margin: 0 }}>
                                             {isCreating ? 'Create New Agent' : selectedAgentName}
                                         </h2>
                                         {!isCreating && selectedAgent?.name === 'main' && (
-                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'rgba(99,102,241,0.12)', color: 'var(--primary)', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                                Default
+                                            <span className="badge-bool" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--primary)' }}>
+                                                Default Agent
                                             </span>
                                         )}
-                                        {!isCreating && selectedAgent?.status && <StatusBadge status={selectedAgent.status} />}
+                                        {!isCreating && <StatusBadge status={selectedAgent?.status} />}
                                     </div>
-                                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+                                    <p className="text-sm text-muted">
                                         {isCreating ? 'Configure identity and basic routing.' : 'Agent workspace and routing configuration.'}
                                         {!isCreating && selectedAgent?.model && (
-                                            <span style={{ color: 'var(--primary)', marginLeft: '0.4rem', fontFamily: 'monospace' }}>
+                                            <span className="text-primary ml-2 monospace">
                                                 · {selectedAgent.model}
                                                 {(selectedAgent.fallbackModels?.length ?? 0) > 0 && ` (+${selectedAgent.fallbackModels!.length} fallback${selectedAgent.fallbackModels!.length > 1 ? 's' : ''})`}
                                             </span>
@@ -956,8 +907,7 @@ export function Agents() {
                                 </div>
                                 {!isCreating && selectedAgentName && (
                                     <button
-                                        className="btn"
-                                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.82rem', color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: 'var(--radius-md)' }}
+                                        className="btn btn-sm btn-ghost text-danger"
                                         onClick={() => handleDelete(selectedAgentName)}
                                     >
                                         <Trash2 size={13} /> Delete Agent
@@ -971,21 +921,18 @@ export function Agents() {
                                     <button
                                         key={tab.id}
                                         className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                                        onClick={() => setActiveTab(tab.id)}
+                                        onClick={() => setActiveTab(tab.id as TabType)}
                                         disabled={isCreating && tab.id !== 'overview'}
                                     >
-                                        {tab.icon}
-                                        {tab.label}
-                                        {tab.badge !== undefined && tab.badge > 0 && (
-                                            <span style={{
-                                                fontSize: '0.65rem', fontWeight: 700, minWidth: '16px', height: '16px',
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                background: 'rgba(99,102,241,0.15)', color: 'var(--primary)',
-                                                borderRadius: 'var(--radius-full)', padding: '0 0.35rem',
-                                            }}>
-                                                {tab.badge}
-                                            </span>
-                                        )}
+                                        <span className="flex items-center gap-2">
+                                            {tab.icon}
+                                            <span>{tab.label}</span>
+                                            {tab.badge !== undefined && tab.badge > 0 && (
+                                                <span className="badge-bool" style={{ padding: '0 0.35rem', minWidth: '1.2rem' }}>
+                                                    {tab.badge}
+                                                </span>
+                                            )}
+                                        </span>
                                     </button>
                                 ))}
                             </div>

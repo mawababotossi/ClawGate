@@ -197,13 +197,16 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
         });
 
         // Post-process the response to strip leaked English thoughts/recaps if they exist
-        const cleanedResponse = this.cleanResponse(responseText);
+        const { cleanText: cleanedResponse, thought: finalThought } = this.separateThoughtFromResponse(
+            responseText,
+            thoughtChunks.trim()
+        );
 
         // Append the assistant response with thoughts if they exist
         this.transcripts.append(msg.sessionId, {
             role: 'assistant',
             content: cleanedResponse,
-            thought: thoughtChunks.trim() || undefined,
+            thought: finalThought || undefined,
             timestamp: Date.now(),
         });
 
@@ -213,7 +216,7 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
         return {
             text: cleanedResponse,
             sessionId: msg.sessionId,
-            thought: thoughtChunks.trim() || undefined
+            thought: finalThought || undefined
         };
     }
 
@@ -237,25 +240,64 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
     }
 
     /**
-     * Heuristic to strip English thinking blocks/recaps that sometimes leak into 
-     * the message stream of reasoning models (like Gemini 3 Preview / 1.5 Pro).
+     * Extrait et sépare proprement une éventuelle fuite de la chaîne de pensée
+     * depuis le stream de réponse. Retourne { cleanText, thought }.
+     * 
+     * Cette approche est plus robuste car elle cherche des marqueurs structurels
+     * communs à tous les modèles de raisonnement, indépendamment de la langue.
      */
-    private cleanResponse(text: string): string {
-        let clean = text.trim();
+    private separateThoughtFromResponse(
+        responseText: string,
+        existingThought: string
+    ): { cleanText: string; thought: string } {
+        let clean = responseText.trim();
+        let thought = existingThought.trim();
 
-        // Pattern 1: detect "I will search... I've analyzed... [Actual Response]"
-        // This often happens when the model "thinks out loud" in English before replying in French.
-        const englishRecapPattern = /^(?:I will|I'll|I have|I've|I'm|Analyzing|Searching|Reviewing|Expanding|Examining|Assessing)[\s\S]{20,500}?(?=[A-ZÀ-Ÿ][a-zà-ÿ]{2,}\s(?:[a-zà-ÿ]{2,}\s)?(?:est|sont|vais|viens|viendrai|serai|ai|as|a|avons|avez|ont))/;
-
-        const match = clean.match(englishRecapPattern);
-        if (match && match[0].length < clean.length * 0.8) {
-            // Only strip if the "recap" isn't the whole message (threshold 80%)
-            // and if there's a clear transition to what looks like a French sentence.
-            console.log(`[core/cleaner] Stripping leaked thinking block: "${match[0].substring(0, 50)}..."`);
-            clean = clean.substring(match[0].length).trim();
+        // Si l'ACP a déjà correctement séparé la pensée dans thought_chunks,
+        // ne pas toucher au responseText — il est déjà propre.
+        if (thought.length > 0) {
+            return { cleanText: clean, thought };
         }
 
-        return clean;
+        // Cas : le modèle n'a PAS utilisé le stream thought_chunk (modèles non-reasoning)
+        // mais a quand même injecté des balises XML de réflexion dans le stream principal.
+
+        // Pattern 1 : balises <think>...</think> (certains modèles open-source)
+        const thinkTagMatch = clean.match(/^<think>([\s\S]*?)<\/think>\s*/i);
+        if (thinkTagMatch) {
+            thought = thinkTagMatch[1].trim();
+            clean = clean.slice(thinkTagMatch[0].length).trim();
+            return { cleanText: clean, thought };
+        }
+
+        // Pattern 2 : bloc entre --- ou === souvent utilisé pour séparer la réflexion
+        const separatorMatch = clean.match(/^([\s\S]{10,800}?)(?:\n[-=]{3,}\n)([\s\S]+)$/);
+        if (separatorMatch && separatorMatch[2].length > 20) {
+            thought = separatorMatch[1].trim();
+            clean = separatorMatch[2].trim();
+            return { cleanText: clean, thought };
+        }
+
+        // Pattern 3 : préfixe de pensée suivi d'un paragraphe distinct
+        const lines = clean.split('\n');
+        if (lines.length > 3) {
+            const firstParagraphEnd = lines.findIndex((l, i) => i > 0 && l.trim() === '');
+            if (firstParagraphEnd > 0 && firstParagraphEnd < lines.length - 2) {
+                const firstParagraph = lines.slice(0, firstParagraphEnd).join('\n');
+                const rest = lines.slice(firstParagraphEnd + 1).join('\n').trim();
+
+                // Si le premier paragraphe ressemble à de la pensée (contient des verbes d'action)
+                const thinkingVerbPattern = /\b(?:I will|I'll|let me|I need to|analyzing|searching|je vais|je dois|analysons|vérifions|checking|reviewing)\b/i;
+                if (thinkingVerbPattern.test(firstParagraph) && rest.length > 50) {
+                    thought = firstParagraph.trim();
+                    clean = rest.trim();
+                    console.log(`[core/cleaner] Extracted thought from response body: "${thought.substring(0, 60)}..."`);
+                    return { cleanText: clean, thought };
+                }
+            }
+        }
+
+        return { cleanText: clean, thought };
     }
 
     /** Try fallback models in order if the primary fails */
@@ -305,16 +347,22 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
                     }
                 });
 
+                const { cleanText: finalResponse, thought: finalThought } = this.separateThoughtFromResponse(
+                    responseText,
+                    thoughtChunks.trim()
+                );
+
                 this.transcripts.append(msg.sessionId, {
                     role: 'assistant',
-                    content: responseText,
+                    content: finalResponse,
+                    thought: finalThought || undefined,
                     timestamp: Date.now(),
                 });
 
                 return {
-                    text: responseText,
+                    text: finalResponse,
                     sessionId: msg.sessionId,
-                    thought: thoughtChunks.trim() || undefined
+                    thought: finalThought || undefined
                 };
             } catch (fallbackErr) {
                 console.warn(`[core] Fallback ${fallbackModel} also failed:`, fallbackErr);

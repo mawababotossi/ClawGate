@@ -6,3 +6,4 @@ export { WebChat } from './WebChat';
 export { Logs } from './Logs';
 export { Channels } from './Channels';
 export { Settings } from './Settings';
+export { ComingSoon } from './ComingSoon';

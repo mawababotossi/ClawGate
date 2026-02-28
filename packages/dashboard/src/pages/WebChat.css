@@ -215,6 +215,7 @@
     padding: 0.75rem;
     margin-bottom: 0.75rem;
     border-left: 2px solid var(--primary);
+    overflow: hidden;
 }
 
 .thought-label {
@@ -225,7 +226,32 @@
     font-weight: 700;
     text-transform: uppercase;
     color: var(--primary);
+}
+
+.thought-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    padding: 0;
     margin-bottom: 0.25rem;
+}
+
+.thought-token-count {
+    margin-left: auto;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+.thought-chevron {
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.thought-chevron.expanded {
+    transform: rotate(180deg);
 }
 
 .thought-text {
@@ -233,6 +259,8 @@
     color: var(--text-secondary);
     font-style: italic;
     line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* ─── Typing Animation ───────────────────────────────────────────────────── */

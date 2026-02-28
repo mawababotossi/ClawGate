@@ -1,16 +1,51 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, MessageSquareCode, Settings, Terminal, Smartphone, Wrench } from 'lucide-react';
+import {
+    LayoutDashboard,
+    Users,
+    MessageSquareCode,
+    Settings,
+    Terminal,
+    Smartphone,
+    Wrench,
+    MessagesSquare,
+    Wifi,
+    Clock,
+    Monitor
+} from 'lucide-react';
 import './Sidebar.css';
 
-const navItems = [
-    { path: '/', label: 'Overview', icon: LayoutDashboard },
-    { path: '/agents', label: 'Agents', icon: Users },
-    { path: '/skills', label: 'Skills & Tools', icon: Wrench },
-    { path: '/chat', label: 'Chat', icon: MessageSquareCode },
-    { path: '/channels', label: 'Channels', icon: Smartphone },
-    { path: '/sessions', label: 'Sessions', icon: MessageSquareCode },
-    { path: '/logs', label: 'Logs', icon: Terminal },
-    { path: '/settings', label: 'Settings', icon: Settings },
+export const navGroups = [
+    {
+        label: 'CHAT',
+        items: [
+            { path: '/chat', label: 'Chat', icon: MessageSquareCode },
+        ],
+    },
+    {
+        label: 'CONTROL',
+        items: [
+            { path: '/', label: 'Overview', icon: LayoutDashboard },
+            { path: '/channels', label: 'Channels', icon: Smartphone },
+            { path: '/instances', label: 'Instances', icon: Wifi },
+            { path: '/sessions', label: 'Sessions', icon: MessagesSquare },
+            { path: '/cron', label: 'Cron Jobs', icon: Clock },
+        ],
+    },
+    {
+        label: 'AGENT',
+        items: [
+            { path: '/agents', label: 'Agents', icon: Users },
+            { path: '/skills', label: 'Skills', icon: Wrench },
+            { path: '/nodes', label: 'Nodes', icon: Monitor },
+        ],
+    },
+    {
+        label: 'SETTINGS',
+        items: [
+            { path: '/settings', label: 'Config', icon: Settings },
+            { path: '/logs', label: 'Logs', icon: Terminal },
+        ],
+    },
 ];
 
 export function Sidebar() {
@@ -25,24 +60,28 @@ export function Sidebar() {
             </div>
 
             <nav className="sidebar-nav">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                {navGroups.map((group) => (
+                    <div key={group.label} className="nav-group">
+                        <div className="nav-group-label">{group.label}</div>
+                        {group.items.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
 
-                    return (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`nav-item ${isActive ? 'active' : ''}`}
-                        >
-                            <Icon size={20} className="nav-icon" />
-                            <span>{item.label}</span>
-                            {isActive && <div className="nav-indicator" />}
-                        </Link>
-                    );
-                })}
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`nav-item ${isActive ? 'active' : ''}`}
+                                >
+                                    <Icon size={18} className="nav-icon" />
+                                    <span>{item.label}</span>
+                                    {isActive && <div className="nav-indicator" />}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                ))}
             </nav>
-
         </aside>
     );
 }

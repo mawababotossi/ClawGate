@@ -4,6 +4,7 @@ import {
     CheckCircle2, AlertTriangle, XCircle, Info,
     Bug, Activity, Zap
 } from 'lucide-react';
+import { PageHeader, EmptyState } from '../components';
 import './Logs.css';
 
 interface LogMessage {
@@ -121,26 +122,31 @@ export function Logs() {
 
     return (
         <div className="page-container logs-page">
-            <div className="page-header" style={{ marginBottom: '1.5rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 700 }}>Logs</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Live tail of the gateway file logs.</p>
-                </div>
-            </div>
-
-            <div className="glass-panel logs-viewer-panel">
-                <div className="panel-header py-3 px-4 flex justify-between items-center" style={{ background: 'transparent', borderBottom: 'none' }}>
-                    <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Logs</h3>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gateway file logs (JSONL).</span>
-                    </div>
+            <PageHeader
+                title="System Logs"
+                description="Live tail of the gateway file logs."
+                actions={
                     <div className="flex gap-2">
                         <button className="btn btn-outline btn-sm" onClick={() => setLogs([])}>
-                            <RefreshCw size={14} style={{ marginRight: '0.4rem' }} /> Refresh
+                            <RefreshCw size={14} /> Clear Buffer
                         </button>
                         <button className="btn btn-outline btn-sm" onClick={handleExport}>
-                            <Download size={14} style={{ marginRight: '0.4rem' }} /> Export visible
+                            <Download size={14} /> Export Visible
                         </button>
+                    </div>
+                }
+            />
+
+            <div className="glass-panel logs-viewer-panel">
+                <div className="panel-header" style={{ padding: '1rem 1.25rem', borderBottom: 'none' }}>
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Activity size={18} className="text-primary" />
+                            <h3 style={{ margin: 0, fontSize: '0.9rem' }}>Live Feed</h3>
+                        </div>
+                        <div className="text-xs text-muted font-mono">
+                            {logFile}
+                        </div>
                     </div>
                 </div>
 
@@ -226,9 +232,13 @@ export function Logs() {
                         onScroll={handleScroll}
                     >
                         {filteredLogs.length === 0 ? (
-                            <div className="flex items-center justify-center h-full text-muted italic opacity-50">
-                                No logs matching current filters...
-                            </div>
+                            <EmptyState
+                                icon={Search}
+                                title="No logs found"
+                                description={logs.length === 0
+                                    ? "Waiting for incoming logs from the gateway..."
+                                    : "No logs match your current search and filter criteria."}
+                            />
                         ) : (
                             <div className="logs-table">
                                 {filteredLogs.map((log, idx) => {

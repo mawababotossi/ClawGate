@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-    Server, Clock, Hash, Globe, Link2, ListTree,
-    RefreshCw, AlertTriangle, CheckCircle2, XCircle,
-    Activity, Wifi, WifiOff, ArrowUpRight, Zap,
+    Clock, Globe, Link2,
+    RefreshCw, AlertTriangle, XCircle,
+    Activity, Wifi, ArrowUpRight, Zap,
     Shield, MessageSquare, Bot, Calendar, Info
 } from 'lucide-react';
 import { api, type AppStatus } from '../services/api';
@@ -37,8 +37,8 @@ function formatTickInterval(ms?: number) {
 }
 
 // Simulate a version check — replace with real API call if endpoint exists
-const CURRENT_VERSION = 'v0.1.0';
-const LATEST_VERSION = 'v0.1.1';
+const CURRENT_VERSION = 'v0.1.0' as string;
+const LATEST_VERSION = 'v0.1.1' as string;
 const HAS_UPDATE = CURRENT_VERSION !== LATEST_VERSION;
 
 // ─── Sub-components ────────────────────────────────────────────────────────
@@ -140,6 +140,8 @@ function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
 
 // ─── Main Component ────────────────────────────────────────────────────────
 
+import { PageHeader } from '../components/PageHeader';
+
 export function Dashboard() {
     const [statusInfo, setStatusInfo] = useState<AppStatus | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -239,36 +241,35 @@ export function Dashboard() {
 
     // ─────────────────────────────────────────────────────────────────────
     return (
-        <div className="page-container overview-page">
+        <div className="page-container overview-page scrollbar-thin">
 
             {/* ── Update banner ──────────────────────────────────────── */}
             {showBanner && <UpdateBanner onDismiss={() => setShowBanner(false)} />}
 
             {/* ── Page header ───────────────────────────────────────── */}
-            <div className="page-header overview-page-header">
-                <div>
-                    <h1>Overview</h1>
-                    <p>Gateway status, entry points, and a fast health read.</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <ConnectionDot state={connState} />
-                    <button
-                        className="btn btn-outline"
-                        onClick={() => fetchStatus(true)}
-                        disabled={isRefreshing}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem' }}
-                    >
-                        <RefreshCw size={15} className={isRefreshing ? 'spin' : ''} />
-                        Refresh
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                title="System Overview"
+                description="Gateway status, entry points, and real-time health monitoring."
+                actions={
+                    <div className="flex items-center gap-3">
+                        <ConnectionDot state={connState} />
+                        <button
+                            className="btn btn-outline"
+                            onClick={() => fetchStatus(true)}
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw size={14} className={isRefreshing ? 'spin' : ''} />
+                            Refresh Status
+                        </button>
+                    </div>
+                }
+            />
 
             {/* ── Connection error ──────────────────────────────────── */}
             {connError && (
                 <div className="conn-error-bar">
                     <XCircle size={15} style={{ flexShrink: 0 }} />
-                    <span>Gateway unreachable: <code>{connError}</code> — check that the gateway is running and the token is correct.</span>
+                    <span>Gateway unreachable: <code>{connError}</code> — ensure the service is running.</span>
                 </div>
             )}
 
@@ -276,73 +277,76 @@ export function Dashboard() {
             <div className="overview-grid-top">
 
                 {/* Gateway Access */}
-                <div className="glass-panel gateway-access">
-                    <div className="panel-header">
-                        <Globe size={17} style={{ color: 'var(--primary)' }} />
-                        <h3>Gateway Access</h3>
-                        <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            Where the dashboard connects and how it authenticates.
-                        </span>
+                <div className="glass-panel gateway-access overflow-hidden">
+                    <div className="panel-header border-b p-4 bg-white/5">
+                        <div className="flex items-center gap-2">
+                            <Globe size={16} className="text-primary" />
+                            <h3 className="text-sm font-bold uppercase tracking-wider">Gateway Configuration</h3>
+                        </div>
                     </div>
-                    <form className="panel-content access-form" onSubmit={handleConnect}>
-                        <div className="input-row">
+                    <form className="panel-content access-form p-5" onSubmit={handleConnect}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="input-group">
-                                <label>WebSocket URL</label>
+                                <label className="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">WebSocket URL</label>
                                 <input
                                     type="text"
+                                    className="glass-input text-sm"
                                     value={wsUrl}
                                     onChange={e => setWsUrl(e.target.value)}
                                     placeholder="ws://localhost:3002"
                                 />
                             </div>
-                        </div>
-                        <div className="input-row split">
                             <div className="input-group">
-                                <label>Gateway Token</label>
+                                <label className="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">Gateway Token</label>
                                 <input
                                     type="password"
+                                    className="glass-input text-sm"
                                     value={token}
                                     onChange={e => setToken(e.target.value)}
                                     placeholder="VITE_DASHBOARD_SECRET"
                                 />
                             </div>
-                            <div className="input-group">
-                                <label>Password <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(not stored)</span></label>
-                                <input type="password" placeholder="System or shared password" />
-                            </div>
                         </div>
-                        <div className="input-row split">
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                             <div className="input-group">
-                                <label>Default Session Key</label>
+                                <label className="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">Default Session</label>
                                 <input
                                     type="text"
+                                    className="glass-input text-sm"
                                     value={sessionKey}
                                     onChange={e => setSessionKey(e.target.value)}
-                                    placeholder="agent:main:main"
                                 />
                             </div>
                             <div className="input-group">
-                                <label>Language</label>
-                                <select value={language} onChange={e => setLanguage(e.target.value)}>
+                                <label className="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">UI Language</label>
+                                <select
+                                    className="glass-input text-sm"
+                                    value={language}
+                                    onChange={e => setLanguage(e.target.value)}
+                                >
                                     <option value="English">English</option>
                                     <option value="French">French (FR)</option>
                                     <option value="Spanish">Spanish (ES)</option>
                                 </select>
                             </div>
                         </div>
-                        <div className="actions-row">
-                            <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                {connState === 'connecting'
-                                    ? <><RefreshCw size={14} className="spin" /> Connecting…</>
-                                    : <><Link2 size={14} /> Connect</>
-                                }
-                            </button>
-                            <button type="button" className="btn btn-outline" onClick={() => fetchStatus(true)} disabled={isRefreshing}>
-                                Refresh
-                            </button>
+
+                        <div className="actions-row mt-4 pt-4 border-t flex items-center justify-between">
+                            <div className="flex gap-2">
+                                <button type="submit" className="btn btn-primary btn-sm px-4">
+                                    {connState === 'connecting'
+                                        ? <><RefreshCw size={14} className="spin" /> Syncing…</>
+                                        : <><Link2 size={14} /> Update Access</>
+                                    }
+                                </button>
+                                <button type="button" className="btn btn-ghost btn-sm text-muted" onClick={() => fetchStatus(true)}>
+                                    Reset
+                                </button>
+                            </div>
                             {lastRefresh && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem', alignSelf: 'center' }}>
-                                    Updated {lastRefresh.toLocaleTimeString()}
+                                <span className="text-[10px] text-muted font-bold uppercase tracking-wider">
+                                    Last synced: {lastRefresh.toLocaleTimeString()}
                                 </span>
                             )}
                         </div>
@@ -350,135 +354,137 @@ export function Dashboard() {
                 </div>
 
                 {/* Snapshot */}
-                <div className="glass-panel gateway-snapshot">
-                    <div className="panel-header">
-                        <Activity size={17} style={{ color: 'var(--primary)' }} />
-                        <h3>Snapshot</h3>
-                        <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            Latest gateway handshake information.
-                        </span>
+                <div className="glass-panel gateway-snapshot overflow-hidden">
+                    <div className="panel-header border-b p-4 bg-white/5">
+                        <div className="flex items-center gap-2">
+                            <Activity size={16} className="text-primary" />
+                            <h3 className="text-sm font-bold uppercase tracking-wider">System Snapshot</h3>
+                        </div>
                     </div>
-                    <div className="panel-content snapshot-stats">
+                    <div className="panel-content snapshot-stats p-5">
                         <SnapshotRow
-                            label="STATUS"
+                            label="Health"
                             value={statusLabel}
                             valueColor={statusColor}
                         />
                         <SnapshotRow
-                            label="UPTIME"
+                            label="Uptime"
                             value={formatUptime(statusInfo?.uptime)}
                         />
                         <SnapshotRow
-                            label="TICK INTERVAL"
+                            label="Polling Rate"
                             value={formatTickInterval(statusInfo?.tickInterval)}
                         />
                         <SnapshotRow
-                            label="LAST CHANNELS REFRESH"
+                            label="Channels"
                             value={formatRelativeTime(statusInfo?.lastChannelsRefresh)}
                         />
                         <SnapshotRow
-                            label="AUTH TYPE"
-                            value={statusInfo?.authType ?? 'Unknown'}
+                            label="Security"
+                            value={statusInfo?.authType ?? 'Agnostic'}
                         />
-                        {statusInfo?.accountHint && (
-                            <SnapshotRow
-                                label="ACCOUNT"
-                                value={statusInfo.accountHint}
-                            />
-                        )}
-                        <div className="snapshot-footer">
-                            <Info size={12} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
-                            <span>Use Channels to link WhatsApp, Telegram, or WebChat.</span>
+                        <div className="mt-4 pt-4 border-t text-[10px] text-muted italic flex gap-2 items-start">
+                            <Info size={12} className="shrink-0" />
+                            <span>Linked channels (WhatsApp, Telegram) are managed in the Channels tab.</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* ── Counter cards ─────────────────────────────────────── */}
-            <div className="overview-counters">
+            <div className="overview-counters grid grid-cols-1 md:grid-cols-3 gap-5">
                 {[
                     {
-                        label: 'INSTANCES',
+                        label: 'Active Beacons',
                         value: statusInfo?.instances ?? 0,
-                        desc: 'Presence beacons in the last 5 minutes.',
+                        desc: 'Presence signals in the last 5 minutes.',
                         icon: <Wifi size={20} />,
                         color: 'var(--primary)',
-                        href: '/instances',
                     },
                     {
-                        label: 'SESSIONS',
+                        label: 'Thread Capacity',
                         value: statusInfo?.sessions ?? 0,
-                        desc: 'Recent session keys tracked by the gateway.',
-                        icon: <ListTree size={20} />,
+                        desc: 'Active conversation session buffers.',
+                        icon: <MessageSquare size={20} />,
                         color: 'var(--secondary)',
-                        href: '/sessions',
                     },
                     {
-                        label: 'CRON',
+                        label: 'Cron Tasks',
                         value: statusInfo?.cron ?? 0,
                         desc: 'Scheduled agent wakeups registered.',
                         icon: <Clock size={20} />,
                         color: 'var(--success)',
-                        href: '/cron',
                     },
                 ].map(card => (
-                    <div key={card.label} className="glass-panel counter-card">
-                        <div className="counter-header">
+                    <div key={card.label} className="glass-panel counter-card p-6 flex flex-col items-center text-center hover:bg-white/[0.02] transition-colors cursor-default">
+                        <div className="flex items-center gap-2 mb-2">
                             <span style={{ color: card.color }}>{card.icon}</span>
-                            <span>{card.label}</span>
+                            <span className="text-[10px] font-bold text-muted uppercase tracking-widest">{card.label}</span>
                         </div>
-                        <div className="counter-value" style={{ color: card.color }}>
+                        <div className="text-4xl font-bold mb-1" style={{ color: card.color }}>
                             {card.value}
                         </div>
-                        <div className="counter-desc">{card.desc}</div>
+                        <p className="text-xs text-muted max-w-[200px]">{card.desc}</p>
                     </div>
                 ))}
             </div>
 
             {/* ── Bottom row: Activity feed + Operator notes ────────── */}
-            <div className="overview-bottom-grid">
+            <div className="overview-bottom-grid grid grid-cols-1 xl:grid-cols-2 gap-5 mb-8">
 
                 {/* Recent Activity */}
-                <div className="glass-panel activity-panel">
-                    <div className="panel-header">
-                        <Zap size={17} style={{ color: 'var(--primary)' }} />
-                        <h3>Recent Activity</h3>
+                <div className="glass-panel activity-panel overflow-hidden">
+                    <div className="panel-header border-b p-4 bg-white/5 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Zap size={16} className="text-primary" />
+                            <h3 className="text-sm font-bold uppercase tracking-wider">Stream Activity</h3>
+                        </div>
                         {connState === 'connected' && (
-                            <span className="live-badge">
-                                <span className="live-dot" />
+                            <span className="badge-bool bg-success/10 text-success text-[10px] gap-1.5 border-none">
+                                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                                 LIVE
                             </span>
                         )}
                     </div>
-                    <ActivityFeed entries={activity} />
+                    <div className="max-h-[350px] overflow-y-auto scrollbar-thin">
+                        <ActivityFeed entries={activity} />
+                    </div>
                 </div>
 
                 {/* Operator Notes */}
-                <div className="glass-panel operator-notes-panel">
-                    <div className="panel-header">
-                        <Hash size={17} style={{ color: 'var(--primary)' }} />
-                        <h3>Operator Notes</h3>
+                <div className="glass-panel operator-notes-panel overflow-hidden">
+                    <div className="panel-header border-b p-4 bg-white/5">
+                        <div className="flex items-center gap-2">
+                            <Shield size={16} className="text-primary" />
+                            <h3 className="text-sm font-bold uppercase tracking-wider">Operator Directives</h3>
+                        </div>
                     </div>
-                    <div className="notes-content">
-                        <div className="note-card">
-                            <div className="note-icon"><Shield size={15} /></div>
+                    <div className="notes-content flex flex-col">
+                        <div className="note-card p-4 flex gap-4 border-b hover:bg-white/[0.01] transition-colors">
+                            <div className="shrink-0 w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center">
+                                <Shield size={16} />
+                            </div>
                             <div>
-                                <h4>Secure Access</h4>
-                                <p>If reaching the gateway over the internet, use Tailscale or a reverse proxy with SSL. Do not expose port 3002 publicly.</p>
+                                <h4 className="text-sm font-bold mb-1">Encrypted Transit</h4>
+                                <p className="text-xs text-muted leading-relaxed">Ensure the gateway is shielded behind a secure tunnel or SSL proxy. Avoid exposing raw TCP ports to the public web.</p>
                             </div>
                         </div>
-                        <div className="note-card">
-                            <div className="note-icon"><MessageSquare size={15} /></div>
+                        <div className="note-card p-4 flex gap-4 border-b hover:bg-white/[0.01] transition-colors">
+                            <div className="shrink-0 w-8 h-8 rounded bg-secondary/10 text-secondary flex items-center justify-center">
+                                <MessageSquare size={16} />
+                            </div>
                             <div>
-                                <h4>Session Hygiene</h4>
-                                <p>Tokens accumulate over time. Use the Sessions page to monitor context limits and clear stale buffers to control LLM costs.</p>
+                                <h4 className="text-sm font-bold mb-1">Context Management</h4>
+                                <p className="text-xs text-muted leading-relaxed">Session buffers grow with interaction. Prune legacy session keys via the Sessions tab to maintain response speed and optimize costs.</p>
                             </div>
                         </div>
-                        <div className="note-card">
-                            <div className="note-icon"><Calendar size={15} /></div>
+                        <div className="note-card p-4 flex gap-4 hover:bg-white/[0.01] transition-colors">
+                            <div className="shrink-0 w-8 h-8 rounded bg-success/10 text-success flex items-center justify-center">
+                                <Calendar size={16} />
+                            </div>
                             <div>
-                                <h4>Cron Reminders</h4>
-                                <p>Cron jobs only execute if the agent's primary model is responsive. Use isolated sessions for recurring runs to avoid context pollution.</p>
+                                <h4 className="text-sm font-bold mb-1">Scheduled Operations</h4>
+                                <p className="text-xs text-muted leading-relaxed">Cron triggers depend on agent availability. Monitor Heartbeat status regularly for autonomous agent consistency.</p>
                             </div>
                         </div>
                     </div>

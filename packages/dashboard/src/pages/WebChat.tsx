@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Bot, RefreshCw, User, Sparkles, Clock, MessageSquare } from 'lucide-react';
+import { Send, Bot, RefreshCw, User, Sparkles, Clock, MessageSquare, ChevronDown } from 'lucide-react';
 import { api } from '../services/api';
 import './WebChat.css';
 
@@ -38,7 +38,9 @@ export function WebChat() {
                 id: `h_${i}_${Date.now()}`,
                 role: m.role,
                 text: m.content || '',
-                thought: m.thought,
+                thought: (typeof m.thought === 'string' && m.thought.trim().length > 0)
+                    ? m.thought
+                    : undefined,
                 timestamp: m.timestamp || new Date().toISOString()
             })));
         } catch (err) {
@@ -93,6 +95,32 @@ export function WebChat() {
 
         wsRef.current = ws;
     };
+
+    function ThoughtBlock({ thought }: { thought: string }) {
+        const [expanded, setExpanded] = useState(false);
+        const preview = thought.slice(0, 120).replace(/\n/g, ' ');
+        const hasMore = thought.length > 120;
+
+        return (
+            <div className="thought-container">
+                <button
+                    className="thought-label thought-toggle"
+                    onClick={() => setExpanded(e => !e)}
+                    aria-expanded={expanded}
+                >
+                    <Sparkles size={12} />
+                    <span>Thinking</span>
+                    <span className="thought-token-count">
+                        ~{Math.round(thought.length / 4)} tokens
+                    </span>
+                    <ChevronDown size={12} className={`thought-chevron ${expanded ? 'expanded' : ''}`} />
+                </button>
+                <div className="thought-text">
+                    {expanded ? thought : (hasMore ? preview + '…' : thought)}
+                </div>
+            </div>
+        );
+    }
 
     useEffect(() => {
         loadHistory();
@@ -234,12 +262,7 @@ export function WebChat() {
                                             <span className="message-time">{formatTime(msg.timestamp)}</span>
                                         </div>
 
-                                        {msg.thought && (
-                                            <div className="thought-container">
-                                                <div className="thought-label"><Sparkles size={12} /> Thinking</div>
-                                                <div className="thought-text">{msg.thought}</div>
-                                            </div>
-                                        )}
+                                        {msg.thought && <ThoughtBlock thought={msg.thought} />}
 
                                         <div className="message-bubble-v2">
                                             {msg.text}

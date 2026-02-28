@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Globe, Cpu, Database, Save, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Globe, Cpu, Database, Save, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import { api, type GlobalConfig, type ProviderConfig } from '../services/api';
 import './Settings.css';
+
+import { PageHeader } from '../components/PageHeader';
 
 export function Settings() {
     const [config, setConfig] = useState<GlobalConfig | null>(null);
@@ -94,15 +96,15 @@ export function Settings() {
         setShowKeys((prev: Record<number, boolean>) => ({ ...prev, [index]: !prev[index] }));
     };
 
-    if (loading) return <div className="page-container"><p>Loading settings...</p></div>;
-    if (!config) return <div className="page-container"><p>Error loading configuration.</p></div>;
+    if (loading) return <div className="page-container p-8"><p className="text-muted">Loading settings...</p></div>;
+    if (!config) return <div className="page-container p-8"><p className="text-danger">Error loading configuration.</p></div>;
 
     return (
-        <div className="page-container">
-            <div className="page-header">
-                <h1><SettingsIcon size={24} style={{ marginRight: '0.5rem', verticalAlign: 'bottom' }} /> Settings</h1>
-                <p>Manage global system parameters and AI provider integrations.</p>
-            </div>
+        <div className="page-container settings-page">
+            <PageHeader
+                title="System Settings"
+                description="Manage global system parameters and AI provider integrations."
+            />
 
             <div className="settings-grid">
                 {/* Project Section */}
