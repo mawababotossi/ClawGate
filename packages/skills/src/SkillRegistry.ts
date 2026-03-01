@@ -133,13 +133,29 @@ export class SkillRegistry {
             manifests.push({
                 name: s.name,
                 description: s.description,
-                kind: 'native',
+                kind: s.kind || 'mcp',
                 status: isManualDisabled ? 'disabled' : 'enabled',
                 parameters: s.parameters,
                 manuallyDisabled: isManualDisabled,
                 reason: isManualDisabled ? 'Manually disabled via dashboard' : undefined
             });
         }
+
+        // 3. Add built-in LLM tools (not in registry but native to the model)
+        manifests.push({
+            name: 'google_web_search',
+            description: 'Search the web using Google Search.',
+            kind: 'native',
+            status: 'enabled',
+            icon: '🌐'
+        });
+        manifests.push({
+            name: 'run_code',
+            description: 'Execute code in a sandboxed environment.',
+            kind: 'native',
+            status: 'enabled',
+            icon: '💻'
+        });
 
         return manifests;
     }

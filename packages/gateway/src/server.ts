@@ -275,11 +275,6 @@ async function main(): Promise<void> {
         res.json(agents);
     });
 
-    // API: List available skills
-    app.get('/api/skills', (req, res) => {
-        const skills = gateway.listAvailableSkills();
-        res.json(skills);
-    });
 
     // API: Install skill dependencies
     app.post('/api/skills/:name/install', async (req, res) => {

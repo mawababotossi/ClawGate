@@ -23,6 +23,8 @@ export interface SkillManifest {
     parameters?: Schema;
     // Manual disablement
     manuallyDisabled?: boolean;
+    // UI
+    icon?: string;
 }
 
 export interface Skill {
@@ -34,6 +36,12 @@ export interface Skill {
 
     /** JSON Schema defining the expected parameters */
     parameters: Schema;
+
+    /** 
+     * Type of skill: 'native' (built-in) or 'mcp' (external).
+     * Defaults to 'mcp' if not specified.
+     */
+    kind?: 'native' | 'mcp';
 
     /**
      * The actual execution logic for the skill.

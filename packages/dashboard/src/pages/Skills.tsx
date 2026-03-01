@@ -400,7 +400,8 @@ export function Skills() {
 
     const { native, mcp, prompt } = useMemo(() => {
         const q = search.toLowerCase().trim();
-        const filtered = manifests.filter(s =>
+        const safeManifests = Array.isArray(manifests) ? manifests : [];
+        const filtered = safeManifests.filter(s =>
             !q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
         );
         return {

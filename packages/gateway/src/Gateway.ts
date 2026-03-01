@@ -236,7 +236,8 @@ export class Gateway implements IGateway {
                     time: new Date().toLocaleString('en-US', { timeZone: tz }),
                     timezone: tz,
                 };
-            }
+            },
+            kind: 'native'
         };
         this.skillRegistry.register(timeSkill);
         console.log(`[gateway] Registered builtin skill: getCurrentTime`);
@@ -284,7 +285,8 @@ export class Gateway implements IGateway {
                 } catch (err: any) {
                     throw new Error(`Failed to read ${filename}: ${err.message}`);
                 }
-            }
+            },
+            kind: 'native'
         };
 
         const updateMemoryFileSkill: Skill = {
@@ -340,7 +342,8 @@ export class Gateway implements IGateway {
                 } catch (err: any) {
                     throw new Error(`Failed to update ${filename}: ${err.message}`);
                 }
-            }
+            },
+            kind: 'native'
         };
 
         const delegateTaskSkill: Skill = {
@@ -384,7 +387,8 @@ export class Gateway implements IGateway {
                 } catch (err: any) {
                     throw new Error(`Delegation to ${targetAgent} failed: ${err.message}`);
                 }
-            }
+            },
+            kind: 'native'
         };
 
         const scheduleTaskSkill: Skill = {
@@ -431,7 +435,8 @@ export class Gateway implements IGateway {
 
                 const id = runtime.addDynamicJob(cron, prompt, true, target);
                 return { success: true, jobId: id, message: `Task scheduled with pattern: ${cron}${target ? ` for ${channel}/${peerId}` : ''}` };
-            }
+            },
+            kind: 'native'
         };
 
         const listTasksSkill: Skill = {
@@ -448,7 +453,8 @@ export class Gateway implements IGateway {
                 const agentName = args.agentName as string;
                 const runtime = this.registry.get(agentName);
                 return { tasks: runtime.listDynamicJobs() };
-            }
+            },
+            kind: 'native'
         };
 
         const removeTaskSkill: Skill = {
@@ -468,7 +474,8 @@ export class Gateway implements IGateway {
                 const runtime = this.registry.get(agentName);
                 const success = runtime.removeDynamicJob(jobId);
                 return { success, message: success ? `Job ${jobId} removed.` : `Job ${jobId} not found.` };
-            }
+            },
+            kind: 'native'
         };
 
         const listAgentsSkill: Skill = {
@@ -486,7 +493,8 @@ export class Gateway implements IGateway {
                     description: `Agent ${a.name} running ${a.model}`
                 }));
                 return { agents };
-            }
+            },
+            kind: 'native'
         };
 
         const readSkillSkill: Skill = {
