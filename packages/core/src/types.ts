@@ -2,6 +2,8 @@
  * @license Apache-2.0
  * @geminiclaw/core — AgentConfig schema
  */
+import { InboundMessage, AgentResponse, OutboundAttachment } from '@geminiclaw/memory';
+
 export interface AgentConfig {
     /** Agent identifier (matches agents.json) */
     name: string;
@@ -60,8 +62,9 @@ export type ActivityType = 'typing' | 'paused';
 export interface IGateway {
     registerChannel(
         channel: string,
-        sendCallback: (peerId: string, text: string) => Promise<void>,
-        activityCallback?: (peerId: string, type: ActivityType) => Promise<void>
+        sendCallback: (peerId: string, text: string, thought?: string) => Promise<void>,
+        activityCallback?: (peerId: string, type: ActivityType) => Promise<void>,
+        sendFileCallback?: (peerId: string, att: OutboundAttachment) => Promise<void>
     ): void;
     ingest(channel: string, peerId: string, text: string, attachments?: any[], metadata?: Record<string, any>): Promise<void>;
     listSessionsDetailed(): any[];

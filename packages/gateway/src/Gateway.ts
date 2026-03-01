@@ -11,6 +11,7 @@ import type {
     AgentResponse,
     Session,
     ChatMessage,
+    OutboundAttachment,
 } from '@geminiclaw/memory';
 import { SessionStore, TranscriptStore } from '@geminiclaw/memory';
 import { AgentRegistry } from '@geminiclaw/core';
@@ -39,6 +40,7 @@ export class Gateway implements IGateway {
     public mcpServer: SkillMcpServer;
     private queue: MessageQueue;
     private sendCallbacks = new Map<string, SendCallback>();
+    private sendFileCallbacks = new Map<string, (peerId: string, att: OutboundAttachment) => Promise<void>>();
     private activityCallbacks = new Map<string, ActivityCallback>();
     private channelConfigs: Record<string, ChannelConfig> = {};
 
@@ -203,11 +205,15 @@ export class Gateway implements IGateway {
     registerChannel(
         channel: string,
         sendCallback: SendCallback,
-        activityCallback?: ActivityCallback
+        activityCallback?: ActivityCallback,
+        sendFileCallback?: (peerId: string, att: OutboundAttachment) => Promise<void>
     ): void {
         this.sendCallbacks.set(channel, sendCallback);
         if (activityCallback) {
             this.activityCallbacks.set(channel, activityCallback);
+        }
+        if (sendFileCallback) {
+            this.sendFileCallbacks.set(channel, sendFileCallback);
         }
         console.log(`[gateway] Registered channel: ${channel}`);
     }
@@ -637,17 +643,29 @@ export class Gateway implements IGateway {
             return;
         }
 
-        // Send the response back via the channel adapter (only if not streamed)
-        if (!response.streamed) {
-            await this.send(channel, peerId, response.text, response.thought);
-        } else if (response.thought) {
-            // If streamed, we might still want to send the thought to the dashboard/mirror
+        // Finalize mirrored thought for owners if streamed
+        if (response.streamed && response.thought && this.isOwner(channel, peerId, metadata)) {
+            if (channel === 'whatsapp') {
+                await this.broadcastToWebChat({ type: 'message', from: 'assistant', text: '', thought: response.thought });
+            }
+        }
+
+        // Send generated files (for BOTH streamed and non-streamed responses)
+        if (response.outboundAttachments?.length) {
+            await this.sendFiles(channel, peerId, response.outboundAttachments);
+
+            // Mirroring if owner
             if (this.isOwner(channel, peerId, metadata)) {
-                if (channel === 'whatsapp') {
-                    await this.broadcastToWebChat({ type: 'message', from: 'assistant', text: '', thought: response.thought });
+                for (const att of response.outboundAttachments) {
+                    if (channel === 'whatsapp') {
+                        // Mirror WhatsApp files to WebChat
+                        await this.sendFile('webchat', '__BROADCAST__', att);
+                    } else if (channel === 'webchat') {
+                        // Mirror WebChat files to WhatsApp
+                        const ownerJid = this.getOwnerJid();
+                        if (ownerJid) await this.sendFile('whatsapp', ownerJid, att);
+                    }
                 }
-                // (WebChat already receives the thought via the main flow if needed, 
-                // but usually thought is for mirroring from WhatsApp to WebChat)
             }
         }
 
@@ -669,8 +687,10 @@ export class Gateway implements IGateway {
     /** Send a message out via a registered channel send callback */
     async send(channel: string, peerId: string, text: string, thought?: string): Promise<void> {
         if (!text || !text.trim()) {
-            console.log(`[gateway-debug] Skipping empty message for channel=${channel}`);
-            return;
+            if (!thought) {
+                console.log(`[gateway-debug] Skipping empty message/thought for channel=${channel}`);
+                return;
+            }
         }
         console.log(`[gateway-debug] Attempting to send message to channel=${channel}, peerId=${peerId}`);
         const sendFn = this.sendCallbacks.get(channel);
@@ -678,9 +698,37 @@ export class Gateway implements IGateway {
             console.warn(`[gateway] No send callback for channel: ${channel}`);
             return;
         }
-        console.log(`[gateway-debug] Found send callback for channel=${channel}. Calling it...`);
         await sendFn(peerId, text, thought);
-        console.log(`[gateway-debug] Send Fn for ${channel} returned.`);
+    }
+
+    /** Send a single file via a registered channel send callback */
+    private async sendFile(
+        channel: string,
+        peerId: string,
+        att: OutboundAttachment
+    ): Promise<void> {
+        const sendFileFn = this.sendFileCallbacks.get(channel);
+        if (!sendFileFn) {
+            console.warn(`[gateway] No file send callback for channel: ${channel}`);
+            return;
+        }
+        try {
+            await sendFileFn(peerId, att);
+            console.log(`[gateway] File sent: ${att.filename} → ${channel}/${peerId}`);
+        } catch (err) {
+            console.error(`[gateway] Failed to send file ${att.filename} to ${channel}/${peerId}:`, err);
+        }
+    }
+
+    /** Send files via a registered channel send callback */
+    async sendFiles(
+        channel: string,
+        peerId: string,
+        attachments: OutboundAttachment[]
+    ): Promise<void> {
+        for (const att of attachments) {
+            await this.sendFile(channel, peerId, att);
+        }
     }
 
     /** Get all active sessions */

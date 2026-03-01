@@ -8,6 +8,11 @@ interface Message {
     role: 'user' | 'assistant' | 'tool';
     text: string;
     thought?: string;
+    attachment?: {
+        filename: string;
+        mimeType: string;
+        data: string; // base64
+    };
     timestamp: string;
 }
 
@@ -81,6 +86,7 @@ export function WebChat() {
                             role: data.from === 'assistant' ? 'assistant' : 'user',
                             text: data.text,
                             thought: data.thought,
+                            attachment: data.attachment,
                             timestamp: new Date().toISOString()
                         }
                     ]);
@@ -274,6 +280,22 @@ export function WebChat() {
                                         {msg.thought && <ThoughtBlock thought={msg.thought} />}
 
                                         <div className="message-bubble-v2">
+                                            {msg.attachment && (
+                                                <div className="message-attachment mb-2">
+                                                    {msg.attachment.mimeType.startsWith('image/') ? (
+                                                        <img
+                                                            src={`data:${msg.attachment.mimeType};base64,${msg.attachment.data}`}
+                                                            alt={msg.attachment.filename}
+                                                            className="rounded-lg max-w-full h-auto border border-white/10"
+                                                        />
+                                                    ) : (
+                                                        <div className="file-attachment-card p-2 bg-white/5 rounded border border-white/10 flex items-center gap-2">
+                                                            <div className="text-primary">📎</div>
+                                                            <div className="text-sm truncate">{msg.attachment.filename}</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                             {msg.text}
                                         </div>
                                     </div>

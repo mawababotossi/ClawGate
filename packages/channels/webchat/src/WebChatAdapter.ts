@@ -10,6 +10,7 @@ import { createServer } from 'node:http';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { IGateway } from '@geminiclaw/core';
+import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CHANNEL = 'webchat';
@@ -19,6 +20,11 @@ interface WsMessage {
     clientId: string;
     text?: string;
     secret?: string;
+    attachments?: {
+        name: string;
+        type: string;
+        data: string; // base64
+    }[];
 }
 
 export class WebChatAdapter {
@@ -69,6 +75,27 @@ export class WebChatAdapter {
                         ws.send(payload);
                     }
                 }
+            },
+            async (peerId: string, att: OutboundAttachment) => {
+                const payload = JSON.stringify({
+                    type: 'message',
+                    from: 'assistant',
+                    text: att.caption || '',
+                    attachment: {
+                        filename: att.filename,
+                        mimeType: att.mimeType,
+                        data: att.data.toString('base64')
+                    }
+                });
+
+                if (peerId === '__BROADCAST__') {
+                    for (const ws of this.clients.values()) {
+                        if (ws.readyState === WebSocket.OPEN) ws.send(payload);
+                    }
+                } else {
+                    const ws = this.clients.get(peerId);
+                    if (ws?.readyState === WebSocket.OPEN) ws.send(payload);
+                }
             }
         );
 
@@ -111,15 +138,26 @@ export class WebChatAdapter {
                     return;
                 }
 
-                if (parsed.type === 'message' && parsed.text?.trim()) {
+                if ((parsed.type === 'message' && parsed.text?.trim()) || parsed.attachments?.length) {
                     // Acknowledge receipt immediately
                     ws.send(JSON.stringify({ type: 'typing' }));
+
+                    let attachments: Attachment[] | undefined;
+                    if (parsed.attachments?.length) {
+                        attachments = parsed.attachments.map(a => ({
+                            type: a.type.startsWith('image/') ? 'image' : 'document',
+                            mimeType: a.type,
+                            data: Buffer.from(a.data, 'base64'),
+                            filename: a.name
+                        }));
+                    }
+
                     // Let the gateway handle it
                     const secret = process.env['DASHBOARD_SECRET'] || process.env['VITE_DASHBOARD_SECRET'];
                     const metadata = {
                         isOwner: !!parsed.secret && !!secret && parsed.secret === secret
                     };
-                    await gateway.ingest(CHANNEL, clientId, parsed.text.trim(), undefined, metadata);
+                    await gateway.ingest(CHANNEL, clientId, parsed.text?.trim() || '', attachments, metadata);
                 }
             });
 

@@ -7,6 +7,7 @@
  */
 import { Telegraf } from 'telegraf';
 import type { IGateway } from '@geminiclaw/core';
+import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
 
 const CHANNEL = 'telegram';
 
@@ -28,19 +29,40 @@ export class TelegramAdapter {
 
     connect(gateway: IGateway): void {
         // Register send callback so gateway can reply to Telegram
-        gateway.registerChannel(CHANNEL, async (peerId: string, text: string) => {
-            try {
-                const chunks = this.splitMessage(text);
-                for (const chunk of chunks) {
-                    await this.bot.telegram.sendMessage(peerId, chunk, {
-                        parse_mode: 'Markdown',
-                    });
+        gateway.registerChannel(
+            CHANNEL,
+            async (peerId: string, text: string) => {
+                try {
+                    const chunks = this.splitMessage(text);
+                    for (const chunk of chunks) {
+                        await this.bot.telegram.sendMessage(peerId, chunk, {
+                            parse_mode: 'Markdown',
+                        });
+                    }
+                } catch {
+                    // Retry without markdown on parse error
+                    try { await this.bot.telegram.sendMessage(peerId, text); } catch { /* ignore */ }
                 }
-            } catch {
-                // Retry without markdown on parse error
-                try { await this.bot.telegram.sendMessage(peerId, text); } catch { /* ignore */ }
+            },
+            // Activity callback
+            async (peerId, type) => {
+                try {
+                    await this.bot.telegram.sendChatAction(peerId, type === 'typing' ? 'typing' : 'find_location');
+                } catch { /* ignore */ }
+            },
+            // File callback
+            async (peerId, att: OutboundAttachment) => {
+                try {
+                    if (att.type === 'image' || att.mimeType.startsWith('image/')) {
+                        await this.bot.telegram.sendPhoto(peerId, { source: att.data }, { caption: att.caption });
+                    } else {
+                        await this.bot.telegram.sendDocument(peerId, { source: att.data, filename: att.filename }, { caption: att.caption });
+                    }
+                } catch (err) {
+                    console.error('[telegram] Failed to send file:', err);
+                }
             }
-        });
+        );
 
         // Resolve bot username for mention detection
         this.bot.telegram.getMe().then((me) => {
@@ -56,10 +78,55 @@ export class TelegramAdapter {
 
         // Handle photo messages with captions
         this.bot.on('photo', async (ctx) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const caption: string = (ctx.message as any).caption ?? '';
-            if (caption.trim()) {
-                const chatId = String(ctx.chat.id);
+            const chatId = String(ctx.chat.id);
+
+            try {
+                const photos = ctx.message.photo;
+                const bestPhoto = photos[photos.length - 1];
+                const fileLink = await ctx.telegram.getFileLink(bestPhoto.file_id);
+
+                const { default: fetch } = await import('node-fetch');
+                const res = await (fetch as any)(fileLink.toString());
+                const buffer = Buffer.from(await res.arrayBuffer());
+
+                const attachments: Attachment[] = [{
+                    type: 'image',
+                    mimeType: 'image/jpeg',
+                    data: buffer,
+                    filename: `telegram_photo_${Date.now()}.jpg`
+                }];
+
+                await this.processMessage(ctx.chat.type, chatId, caption, gateway, attachments);
+            } catch (err) {
+                console.error('[telegram] Photo download failed:', err);
+                await this.processMessage(ctx.chat.type, chatId, caption, gateway);
+            }
+        });
+
+        // Handle document messages
+        this.bot.on('document', async (ctx) => {
+            const caption: string = (ctx.message as any).caption ?? '';
+            const chatId = String(ctx.chat.id);
+
+            try {
+                const fileId = ctx.message.document.file_id;
+                const fileLink = await ctx.telegram.getFileLink(fileId);
+
+                const { default: fetch } = await import('node-fetch');
+                const res = await (fetch as any)(fileLink.toString());
+                const buffer = Buffer.from(await res.arrayBuffer());
+
+                const attachments: Attachment[] = [{
+                    type: 'document',
+                    mimeType: ctx.message.document.mime_type || 'application/octet-stream',
+                    data: buffer,
+                    filename: ctx.message.document.file_name || 'document'
+                }];
+
+                await this.processMessage(ctx.chat.type, chatId, caption, gateway, attachments);
+            } catch (err) {
+                console.error('[telegram] Document download failed:', err);
                 await this.processMessage(ctx.chat.type, chatId, caption, gateway);
             }
         });
@@ -84,6 +151,7 @@ export class TelegramAdapter {
         chatId: string,
         text: string,
         gateway: IGateway,
+        attachments?: Attachment[],
     ): Promise<void> {
         const isGroup = chatType === 'group' || chatType === 'supergroup';
 
@@ -93,9 +161,9 @@ export class TelegramAdapter {
             text = text.replace(`@${this.botUsername}`, '').trim();
         }
 
-        if (!text.trim()) return;
+        if (!text.trim() && !attachments) return;
 
-        await gateway.ingest(CHANNEL, chatId, text);
+        await gateway.ingest(CHANNEL, chatId, text.trim() || '[Média]', attachments);
     }
 
     private splitMessage(text: string, maxLen = 4000): string[] {

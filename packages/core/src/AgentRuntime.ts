@@ -4,7 +4,7 @@
  *
  * Uses ACPBridge to spawn gemini-cli in the background.
  */
-import type { InboundMessage, AgentResponse } from '@geminiclaw/memory';
+import { InboundMessage, AgentResponse, OutboundAttachment } from '@geminiclaw/memory';
 import { TranscriptStore } from '@geminiclaw/memory';
 import type { SkillRegistry } from '@geminiclaw/skills';
 import type { AgentConfig } from './types.js';
@@ -174,10 +174,17 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
 
         const acpSessionId = await this.getSessionId(msg.sessionId, bridge, mcpServers);
 
-        let promptText = msg.text;
+        // Traitement des pièces jointes reçues
+        const attachmentBlock = msg.attachments && msg.attachments.length > 0
+            ? await this.processAttachments(msg.attachments, msg.sessionId)
+            : '';
+
+        let promptText = msg.text + attachmentBlock;
         const systemPrompt = this.loadSystemPrompt(peerAgents);
         if (isNewSession && systemPrompt) {
-            promptText = `<system_instructions>\n${systemPrompt}\n</system_instructions>\n\n<user_input>\n${msg.text}\n</user_input>`;
+            promptText = `<system_instructions>\n${systemPrompt}\n</system_instructions>\n\n<user_input>\n${msg.text}${attachmentBlock}\n</user_input>`;
+        } else if (attachmentBlock) {
+            promptText = `<user_input>\n${promptText}\n</user_input>`;
         }
 
         let responseText = '';
@@ -227,16 +234,18 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
             timestamp: msg.timestamp,
         });
 
-        // Post-process the response to strip leaked English thoughts/recaps if they exist
         const { cleanText: cleanedResponse, thought: finalThought } = this.separateThoughtFromResponse(
             responseText,
             thoughtChunks.trim()
         );
 
+        // Extraire les fichiers à envoyer
+        const { outboundAttachments, cleanText: finalText } = this.extractOutboundFiles(cleanedResponse);
+
         // Append the assistant response with thoughts if they exist
         this.transcripts.append(msg.sessionId, {
             role: 'assistant',
-            content: cleanedResponse,
+            content: finalText,
             thought: finalThought || undefined,
             timestamp: Date.now(),
         });
@@ -247,10 +256,11 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
         this._status = 'Healthy';
 
         return {
-            text: cleanedResponse,
+            text: finalText,
             sessionId: msg.sessionId,
             thought: finalThought || undefined,
-            streamed: streamingBuffer !== null
+            streamed: streamingBuffer !== null,
+            outboundAttachments: outboundAttachments.length > 0 ? outboundAttachments : undefined,
         };
     }
 
@@ -271,6 +281,171 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
         } catch (err) {
             console.error(`[core/runtime] Failed to log to journal:`, err);
         }
+    }
+
+    /**
+     * Convertit les attachments en bloc de texte injectables dans le prompt.
+     */
+    private async processAttachments(
+        attachments: any[],
+        sessionId: string
+    ): Promise<string> {
+        if (!attachments || attachments.length === 0) return '';
+
+        const workspaceDir = this.config.baseDir
+            ? path.resolve(this.config.baseDir, 'workspace', 'uploads')
+            : path.resolve(process.cwd(), 'data', 'uploads');
+
+        if (!fs.existsSync(workspaceDir)) {
+            fs.mkdirSync(workspaceDir, { recursive: true });
+        }
+
+        const blocks: string[] = [];
+
+        for (const att of attachments) {
+            if (!att.data && !att.url) continue;
+
+            // Résoudre les données
+            let buffer: Buffer | null = null;
+            if (att.data) {
+                buffer = att.data;
+            } else if (att.url) {
+                try {
+                    const { default: fetch } = await import('node-fetch');
+                    const res = await (fetch as any)(att.url);
+                    buffer = Buffer.from(await res.arrayBuffer());
+                } catch (err) {
+                    blocks.push(`[Fichier non téléchargeable : ${att.url}]`);
+                    continue;
+                }
+            }
+
+            if (!buffer) continue;
+
+            // Limite de taille
+            if (buffer.length > 20 * 1024 * 1024) {
+                blocks.push(`[Fichier trop volumineux (${Math.round(buffer.length / 1024 / 1024)}MB > 20MB) : ${att.filename}]`);
+                continue;
+            }
+
+            // Traitement selon le type
+            if (att.type === 'image' || att.mimeType.startsWith('image/')) {
+                const ext = att.mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+                const filename = att.filename || `image_${Date.now()}.${ext}`;
+                const filePath = path.join(workspaceDir, filename);
+                fs.writeFileSync(filePath, buffer);
+
+                const base64 = buffer.toString('base64');
+                blocks.push(
+                    `<attachment type="image" filename="${filename}" path="${filePath}">\n` +
+                    `L'utilisateur a envoyé une image. Elle est disponible localement à : ${filePath}\n` +
+                    `Pour analyser cette image, utilise l'outil read_file avec ce chemin, ou analyse le contenu base64 ci-dessous :\n` +
+                    `data:${att.mimeType};base64,${base64.substring(0, 100)}... (${Math.round(buffer.length / 1024)}KB)\n` +
+                    `</attachment>`
+                );
+
+            } else if (att.mimeType === 'application/pdf' || att.filename?.toLowerCase().endsWith('.pdf')) {
+                const filename = att.filename || `document_${Date.now()}.pdf`;
+                const filePath = path.join(workspaceDir, filename);
+                fs.writeFileSync(filePath, buffer);
+
+                try {
+                    const pdfParse = (await import('pdf-parse')).default;
+                    const parsed = await pdfParse(buffer);
+                    const textPreview = parsed.text.substring(0, 3000);
+                    blocks.push(
+                        `<attachment type="pdf" filename="${filename}" path="${filePath}" pages="${parsed.numpages}">\n` +
+                        `Contenu du PDF (${parsed.numpages} pages) :\n${textPreview}` +
+                        (parsed.text.length > 3000 ? '\n[... contenu tronqué, utilise read_file pour la suite ...]' : '') +
+                        `\n</attachment>`
+                    );
+                } catch {
+                    blocks.push(
+                        `<attachment type="pdf" filename="${filename}" path="${filePath}">\n` +
+                        `L'utilisateur a envoyé un PDF. Fichier disponible à : ${filePath}\n` +
+                        `Utilise l'outil read_file ou run_shell_command pour en lire le contenu.\n` +
+                        `</attachment>`
+                    );
+                }
+
+            } else {
+                const filename = att.filename || `file_${Date.now()}`;
+                const filePath = path.join(workspaceDir, filename);
+                fs.writeFileSync(filePath, buffer);
+                blocks.push(
+                    `<attachment type="document" filename="${filename}" path="${filePath}" mimeType="${att.mimeType}">\n` +
+                    `L'utilisateur a envoyé un fichier. Disponible à : ${filePath}\n` +
+                    `</attachment>`
+                );
+            }
+        }
+
+        return blocks.length > 0
+            ? `\n<user_attachments>\n${blocks.join('\n')}\n</user_attachments>\n`
+            : '';
+    }
+
+    /**
+     * Détecte les balises [[FILE:path|caption]] et prépare les OutboundAttachment.
+     */
+    private extractOutboundFiles(text: string): {
+        outboundAttachments: OutboundAttachment[];
+        cleanText: string;
+    } {
+        const attachments: OutboundAttachment[] = [];
+        const pattern = /\[\[FILE:([^\]|]+)(?:\|([^\]]*))?\]\]/g;
+
+        const cleanText = text.replace(pattern, (match, filePath, caption) => {
+            // Résoudre le chemin — relatif au workspace de l'agent si pas absolu
+            let resolvedPath = filePath.trim();
+            if (!path.isAbsolute(resolvedPath) && this.config.baseDir) {
+                resolvedPath = path.resolve(this.config.baseDir, 'workspace', resolvedPath);
+            }
+            resolvedPath = path.resolve(resolvedPath);
+
+            if (!fs.existsSync(resolvedPath)) {
+                console.warn(`[core/runtime] extractOutboundFiles: file not found: ${resolvedPath}`);
+                return `[Fichier non trouvé: ${path.basename(resolvedPath)}]`;
+            }
+
+            // Sécurité : vérifier que le fichier est dans le workspace de l'agent
+            const workspaceBase = this.config.baseDir ? path.resolve(this.config.baseDir, 'workspace') : null;
+            if (workspaceBase && !resolvedPath.startsWith(workspaceBase)) {
+                console.warn(`[core/runtime] Security alert: agent tried to leak file outside workspace: ${resolvedPath}`);
+                return `[Accès refusé: ${path.basename(resolvedPath)}]`;
+            }
+
+            try {
+                const data = fs.readFileSync(resolvedPath);
+                const ext = path.extname(resolvedPath).toLowerCase();
+                const mimeMap: Record<string, string> = {
+                    '.pdf': 'application/pdf',
+                    '.png': 'image/png',
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    '.txt': 'text/plain',
+                };
+                const mimeType = mimeMap[ext] || 'application/octet-stream';
+                const isImage = ext === '.png' || ext === '.jpg' || ext === '.jpeg';
+
+                console.log(`[core/runtime] Outbound file queued: ${path.basename(resolvedPath)} (${Math.round(data.length / 1024)}KB)`);
+                attachments.push({
+                    type: isImage ? 'image' : 'document',
+                    mimeType,
+                    data,
+                    filename: path.basename(resolvedPath),
+                    caption: caption?.trim(),
+                });
+                return ''; // Retirer la balise du texte envoyé
+            } catch (err) {
+                console.error(`[core/runtime] Failed to read outbound file:`, err);
+                return `[Erreur lecture fichier: ${path.basename(resolvedPath)}]`;
+            }
+        }).trim();
+
+        return { outboundAttachments: attachments, cleanText };
     }
 
     /**

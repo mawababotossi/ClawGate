@@ -47,4 +47,13 @@ export interface AgentResponse {
     thought?: string;
     tokensUsed?: number;
     streamed?: boolean;
+    outboundAttachments?: OutboundAttachment[];
+}
+
+export interface OutboundAttachment {
+    type: 'image' | 'audio' | 'document';
+    mimeType: string;
+    data: Buffer;
+    filename: string;
+    caption?: string;
 }

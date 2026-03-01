@@ -12,6 +12,7 @@ type BaileysModule = any;
 import { join } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
 import type { IGateway } from '@geminiclaw/core';
+import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
 
 const CHANNEL = 'whatsapp';
 const AUTH_DIR = join(process.cwd(), 'data', 'whatsapp_auth');
@@ -130,6 +131,35 @@ export class WhatsAppAdapter {
                 } catch (err) {
                     console.error('[whatsapp-debug] activityCallback error:', err);
                 }
+            },
+            async (peerId, att: OutboundAttachment) => {
+                if (!this.sock) return;
+                try {
+                    const formatJid = (id: string) => {
+                        if (id.includes('@')) return id;
+                        const clean = id.replace(/\+/g, '').trim();
+                        return `${clean}@s.whatsapp.net`;
+                    };
+                    const realJid = this.peerToLastJid.get(peerId) || formatJid(peerId);
+
+                    if (att.type === 'image' || att.mimeType.startsWith('image/')) {
+                        await this.sock.sendMessage(realJid, {
+                            image: att.data,
+                            caption: att.caption || att.filename,
+                            mimetype: att.mimeType,
+                        });
+                    } else {
+                        await this.sock.sendMessage(realJid, {
+                            document: att.data,
+                            fileName: att.filename,
+                            caption: att.caption,
+                            mimetype: att.mimeType,
+                        });
+                    }
+                    console.log(`[whatsapp-debug] File ${att.filename} sent successful to ${realJid}`);
+                } catch (err) {
+                    console.error('[whatsapp] File send failed:', err);
+                }
             }
         );
 
@@ -150,6 +180,8 @@ export class WhatsAppAdapter {
         const fetchLatestBaileysVersion = b.fetchLatestBaileysVersion || baileysModule.fetchLatestBaileysVersion;
         const DisconnectReason = b.DisconnectReason || baileysModule.DisconnectReason;
         const isJidGroup = b.isJidGroup || baileysModule.isJidGroup;
+        const downloadContentFromMessage = b.downloadContentFromMessage || baileysModule.downloadContentFromMessage;
+        const toBuffer = b.toBuffer || baileysModule.toBuffer;
 
         const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
         const { version } = await fetchLatestBaileysVersion();
@@ -158,6 +190,7 @@ export class WhatsAppAdapter {
             version,
             auth: state,
             printQRInTerminal: true,
+            syncFullHistory: false,
             logger: { level: 'silent', trace: () => { }, debug: () => { }, info: () => { }, warn: () => { }, error: () => { }, fatal: () => { }, child: () => ({ level: 'silent', trace: () => { }, debug: () => { }, info: () => { }, warn: () => { }, error: () => { }, fatal: () => { }, child: () => ({}) }) },
             browser: ['GeminiClaw', 'Chrome', '1.0.0'],
             markOnlineOnConnect: true,
@@ -212,78 +245,29 @@ export class WhatsAppAdapter {
 
         this.sock.ev.on('messages.upsert', async (event: BaileysModule) => {
             const { messages, type } = event;
-            console.log(`\n[whatsapp-raw] event.type=${type}, messages.length=${messages.length}`);
-
-            const extractText = (m: any) => {
-                const msg = m.message;
-                if (!msg) return '';
-
-                // Direct conversation
-                if (msg.conversation) return msg.conversation;
-
-                // Extended text (replies, links etc)
-                if (msg.extendedTextMessage?.text) return msg.extendedTextMessage.text;
-
-                // Wrapped messages (deviceSent, ephemeral, viewOnce)
-                const wrapped = msg.deviceSentMessage?.message ||
-                    msg.ephemeralMessage?.message ||
-                    msg.viewOnceMessage?.message ||
-                    msg.viewOnceMessageV2?.message;
-
-                if (wrapped) {
-                    if (wrapped.conversation) return wrapped.conversation;
-                    if (wrapped.extendedTextMessage?.text) return wrapped.extendedTextMessage.text;
-                }
-
-                return msg.imageMessage?.caption || msg.videoMessage?.caption || '';
-            };
-
-            // Raw logging for self-messages or all messages
-            for (const m of messages) {
-                const text = extractText(m);
-                const jid = m.key?.remoteJid ?? '';
-                const fromMe = m.key?.fromMe;
-                console.log(`[whatsapp-raw] msg -> remoteJid=${jid}, fromMe=${fromMe}, text="${text}"`);
-                if (fromMe) {
-                    console.log(`[whatsapp-raw] FULL SELF-MESSAGE PAYLOAD:`, JSON.stringify(m, null, 2));
-                }
-            }
-
             if (type !== 'notify') return;
 
             for (const msg of messages) {
                 if (!msg.message) continue;
+                if (msg.key?.fromMe && !msg.key?.remoteJid?.endsWith('@lid')) continue; // Ignore my own non-self messages
 
                 const msgId = msg.key?.id;
                 if (!msgId) continue;
-
-                // Deduplication cache check
-                if (this.processedMessages.has(msgId)) {
-                    console.log(`[whatsapp-debug] Skipping already processed message ID: ${msgId}`);
-                    continue;
-                }
-
-                // Add to cache & maintain bounded size
+                if (this.processedMessages.has(msgId)) continue;
                 this.processedMessages.add(msgId);
-                if (this.processedMessages.size > 1000) {
-                    const firstItem = this.processedMessages.values().next().value;
-                    if (firstItem) this.processedMessages.delete(firstItem);
-                }
 
                 const jid: string = msg.key?.remoteJid ?? '';
                 if (!jid) continue;
 
-                const text = extractText(msg);
+                // Extract basic info
+                const content = msg.message;
+                const textBody = content.conversation
+                    || content.extendedTextMessage?.text
+                    || content.imageMessage?.caption
+                    || content.documentMessage?.caption
+                    || '';
 
-                if (!text.trim()) {
-                    console.log(`[whatsapp-debug] Ignoring empty message from ${jid}`);
-                    continue;
-                }
-
-                // Anti-loop: ignore bot's own responses
-                if (text.endsWith('\u200B')) {
-                    continue;
-                }
+                if (textBody.endsWith('\u200B')) continue; // Anti-loop
 
                 const normalizeJid = (id: string) => {
                     if (!id) return '';
@@ -293,69 +277,56 @@ export class WhatsAppAdapter {
 
                 const myJid = this.sock?.user?.id ? normalizeJid(this.sock.user.id) : '';
                 const baseRemoteJid = normalizeJid(jid);
-
-                console.log(`\n[whatsapp-debug] --- MSG ---`);
-                console.log(`[whatsapp-debug] text:`, text.trim());
-                console.log(`[whatsapp-debug] jid (remoteJid):`, jid);
-                console.log(`[whatsapp-debug] fromMe:`, msg.key?.fromMe);
-                console.log(`[whatsapp-debug] myJid:`, myJid);
-                console.log(`[whatsapp-debug] baseRemoteJid:`, baseRemoteJid);
-                console.log(`[whatsapp-debug] ------------------\n`);
-
-                // Allow fromMe only if chatting with oneself (Note to self)
-                // Note: Self-messages often arrive with @lid instead of @s.whatsapp.net
-                // We consider it self if the normalized base remote JID is my JID
                 const isSelf = baseRemoteJid === myJid || (msg.key?.fromMe && jid.endsWith('@lid'));
-                // Wait: (msg.key?.fromMe && jid.endsWith('@lid')) is still a bit broad but safer than before
-                // if we check if there's an alternative to detect my own LID.
+                const targetJid = isSelf ? myJid : jid;
 
-                if (msg.key?.fromMe && !isSelf) {
-                    console.log(`[whatsapp-debug] Dropped secondary fromMe message to ${jid}`);
-                    continue;
-                }
-
-                const isGroup = isJidGroup ? isJidGroup(jid) : jid.endsWith('@g.us');
-
-                if (this.options.mentionOnly && isGroup) {
-                    const mentioned = msg.message.extendedTextMessage?.contextInfo?.mentionedJid ?? [];
-                    const myJid = this.sock?.user?.id ?? '';
-                    if (!mentioned.includes(myJid)) {
-                        console.log(`[whatsapp] Ignoring group message from ${jid} (not mentioned)`);
-                        continue;
-                    }
-                }
-
-                try {
-                    console.log(`[whatsapp-debug] Initial sendPresenceUpdate(composing) for ${jid}`);
-                    await this.sock?.presenceSubscribe(jid);
-                    await this.sock?.sendPresenceUpdate('composing', jid);
-                    console.log(`[whatsapp-debug] Initial sendPresenceUpdate(composing) successful`);
-                } catch { /* ignore */ }
-
-                console.log(`[whatsapp] Ingesting message to gateway: ${text.trim()} (fromMe=${msg.key?.fromMe})`);
-
-                // For self-messages, we MUST use our own canonical JID as peerId 
-                // to ensure the gateway treats it as a single "Me" session.
-                const targetJid = msg.key?.fromMe ? myJid : jid;
-
-                // ROUTING LOGIC (Anti-Regression):
-                // 1. For non-self messages, we map the peerId to the incoming JID.
-                // 2. For self-messages (Notes to self), we do NOT map to the LID for sending.
-                //    Sending to a LID from the bot account often fails to render on the phone.
-                //    Replies to self-chat must target the canonical @s.whatsapp.net JID.
-                // 3. However, typing indicators (presence) ONLY work if sent to the LID.
-                if (msg.key?.fromMe) {
+                if (isSelf) {
                     this.peerToPresenceJid.set(targetJid, jid);
-                    // Don't set peerToLastJid -> falls through to formatJid() -> @s.whatsapp.net
                 } else {
                     this.peerToLastJid.set(targetJid, jid);
                 }
 
-                await gateway.ingest(CHANNEL, targetJid, text.trim(), undefined, { fromMe: !!msg.key?.fromMe });
+                // Handle media
+                let attachments: Attachment[] | undefined;
+                if (content.imageMessage || content.documentMessage) {
+                    try {
+                        const downloadMedia = async (messageContent: any, mediaType: string): Promise<Buffer> => {
+                            const stream = await downloadContentFromMessage(messageContent, mediaType);
+                            return toBuffer(stream);
+                        };
 
+                        if (content.imageMessage) {
+                            const buffer = await downloadMedia(content.imageMessage, 'image');
+                            attachments = [{
+                                type: 'image',
+                                mimeType: content.imageMessage.mimetype || 'image/jpeg',
+                                data: buffer,
+                                filename: `whatsapp_image_${Date.now()}.jpg`,
+                            }];
+                        } else if (content.documentMessage) {
+                            const buffer = await downloadMedia(content.documentMessage, 'document');
+                            attachments = [{
+                                type: 'document',
+                                mimeType: content.documentMessage.mimetype || 'application/octet-stream',
+                                data: buffer,
+                                filename: content.documentMessage.fileName || 'document',
+                            }];
+                        }
+                    } catch (err) {
+                        console.error('[whatsapp] Failed to download media:', err);
+                    }
+                }
+
+                if (!textBody.trim() && !attachments) continue;
 
                 try {
-                    console.log(`[whatsapp-debug] Final sendPresenceUpdate(paused) for ${jid}`);
+                    await this.sock?.presenceSubscribe(jid);
+                    await this.sock?.sendPresenceUpdate('composing', jid);
+                } catch { /* ignore */ }
+
+                await gateway.ingest(CHANNEL, targetJid, textBody.trim() || '[Média]', attachments, { fromMe: !!msg.key?.fromMe });
+
+                try {
                     await this.sock?.sendPresenceUpdate('paused', jid);
                 } catch { /* ignore */ }
             }
