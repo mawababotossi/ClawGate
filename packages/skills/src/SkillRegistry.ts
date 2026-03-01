@@ -5,9 +5,53 @@
 import type { FunctionDeclaration } from '@google/genai';
 import type { Skill } from './types.js';
 import { extractDeclaration } from './types.js';
+import { SkillMdLoader, SkillMd } from './SkillMdLoader.js';
 
 export class SkillRegistry {
     private skills: Map<string, Skill> = new Map();
+    private skillMdLoader?: SkillMdLoader;
+    private promptSkills: SkillMd[] = [];
+
+    constructor(skillDirs?: string[]) {
+        if (skillDirs && skillDirs.length > 0) {
+            this.skillMdLoader = new SkillMdLoader(skillDirs);
+            this.refreshPromptSkills();
+        }
+    }
+
+    /** Refresh prompt-driven skills from disk */
+    public refreshPromptSkills(): void {
+        if (this.skillMdLoader) {
+            const all = this.skillMdLoader.loadAll();
+            this.promptSkills = this.skillMdLoader.filter(all);
+            console.log(`[skills] Loaded ${this.promptSkills.length} prompt-driven skills.`);
+        }
+    }
+
+    /** Get the prompt block for all active prompt-driven skills, or a specific subset */
+    public getPromptBlock(whitelist?: string[]): string {
+        if (!this.skillMdLoader) return '';
+
+        let targetSkills = this.promptSkills;
+        if (whitelist && whitelist.length > 0) {
+            targetSkills = this.promptSkills.filter(s => whitelist.includes(s.name));
+        }
+
+        return this.skillMdLoader.formatForPrompt(targetSkills);
+    }
+
+    /** Get all prompt-driven skills (including disabled ones) */
+    public getAllPromptSkills(): SkillMd[] {
+        if (!this.skillMdLoader) return [];
+        const all = this.skillMdLoader.loadAll();
+        this.skillMdLoader.filter(all); // Filters and updates status/reason in-place
+        return all;
+    }
+
+    /** Get filtered prompt-driven skills */
+    public getActivePromptSkills(): SkillMd[] {
+        return this.promptSkills;
+    }
 
     /** Register a local skill */
     register(skill: Skill): void {

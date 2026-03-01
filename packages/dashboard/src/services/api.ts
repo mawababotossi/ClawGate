@@ -28,6 +28,8 @@ export interface AgentConfig {
     };
     authType?: string;
     apiKey?: string;
+    /** List of enabled prompt-driven skills (OpenClaw) */
+    skills?: string[];
 }
 
 export interface AppStatus {
@@ -127,8 +129,13 @@ export const api = {
         await axios.put(`${API_BASE_URL}/agents/${agentName}/memory/${filename}`, { content });
     },
 
-    async getSkills(): Promise<{ native: any[], project: any[] }> {
+    async getSkills(): Promise<{ native: any[], project: any[], prompt: any[] }> {
         const response = await axios.get(`${API_BASE_URL}/skills`);
+        return response.data;
+    },
+
+    async installSkill(name: string): Promise<{ success: boolean, output: string }> {
+        const response = await axios.post(`${API_BASE_URL}/skills/${name}/install`);
         return response.data;
     },
 

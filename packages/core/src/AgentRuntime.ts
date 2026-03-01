@@ -140,6 +140,15 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
             }
         }
 
+        // Inject prompt-driven skills from registry
+        if (this.skillRegistry) {
+            // Add prompt-driven skills from SkillRegistry
+            const promptBlock = this.skillRegistry.getPromptBlock(this.config.skills);
+            if (promptBlock) {
+                p += promptBlock;
+            }
+        }
+
         return p.trim();
     }
 

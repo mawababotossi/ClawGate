@@ -31,6 +31,8 @@ export interface AgentConfig {
     };
     /** Whitelist of granted permissions (run_shell_command, write_file, read_file, network) */
     allowedPermissions?: string[];
+    /** List of enabled prompt-driven skills (OpenClaw) */
+    skills?: string[];
 }
 
 export interface ProviderConfig {

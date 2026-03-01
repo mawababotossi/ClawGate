@@ -43,7 +43,11 @@ export class Gateway implements IGateway {
     constructor(private config: GatewayConfig) {
         this.sessions = new SessionStore(config.dataDir);
         this.transcripts = new TranscriptStore(config.dataDir);
-        this.skillRegistry = new SkillRegistry();
+
+        const openClawSkillsPath = '/home/tym/.nvm/versions/node/v22.14.0/lib/node_modules/openclaw/skills';
+        const localSkillsPath = path.join(config.dataDir, 'skills');
+        this.skillRegistry = new SkillRegistry([openClawSkillsPath, localSkillsPath]);
+
         this.mcpServer = new SkillMcpServer(this.skillRegistry);
 
         // Register a builtin test skill
@@ -478,6 +482,33 @@ export class Gateway implements IGateway {
             }
         };
 
+        const readSkillSkill: Skill = {
+            name: 'read_skill',
+            description: 'Read the full instructions (SKILL.md) for a specialized skill when its description matches the task.',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    location: {
+                        type: Type.STRING,
+                        description: 'The absolute path to the SKILL.md file (provided in <available_skills>).'
+                    }
+                },
+                required: ['location']
+            },
+            execute: async (args) => {
+                const location = args.location as string;
+                try {
+                    if (!fs.existsSync(location)) {
+                        throw new Error(`Skill file not found at: ${location}`);
+                    }
+                    const content = fs.readFileSync(location, 'utf8');
+                    return { content };
+                } catch (err: any) {
+                    throw new Error(`Failed to read skill: ${err.message}`);
+                }
+            }
+        };
+
         this.skillRegistry.register(readMemoryFileSkill);
         this.skillRegistry.register(updateMemoryFileSkill);
         this.skillRegistry.register(delegateTaskSkill);
@@ -485,7 +516,8 @@ export class Gateway implements IGateway {
         this.skillRegistry.register(listTasksSkill);
         this.skillRegistry.register(removeTaskSkill);
         this.skillRegistry.register(listAgentsSkill);
-        console.log(`[gateway] Registered scheduler & discovery skills: schedule_task, list_tasks, remove_task, list_agents`);
+        this.skillRegistry.register(readSkillSkill);
+        console.log(`[gateway] Registered scheduler, discovery & skill tools: schedule_task, list_tasks, remove_task, list_agents, read_skill`);
     }
 
 
@@ -708,9 +740,9 @@ export class Gateway implements IGateway {
     }
 
     /**
-     * List all available skills, categorized by native and project.
+     * List all available skills, categorized by native, project, and prompt-driven.
      */
-    listAvailableSkills(): { native: any[], project: any[] } {
+    listAvailableSkills(): { native: any[], project: any[], prompt: any[] } {
         const native = [
             { name: 'gmail', description: 'Read and send emails via Gmail.', type: 'native' },
             { name: 'google_calendar', description: 'Manage calendar events.', type: 'native' },
@@ -725,7 +757,77 @@ export class Gateway implements IGateway {
             type: 'project'
         }));
 
-        return { native, project };
+        const prompt = this.skillRegistry.getAllPromptSkills().map(s => ({
+            name: s.name,
+            description: s.description,
+            type: 'prompt',
+            status: s.status,
+            reason: s.reason,
+            install: s.install,
+            path: s.path
+        }));
+
+        return { native, project, prompt };
+    }
+
+    /**
+     * Install dependencies for a prompt-driven skill.
+     */
+    async installSkill(name: string): Promise<{ success: boolean, output: string }> {
+        const skills = this.skillRegistry.getAllPromptSkills();
+        const skill = skills.find(s => s.name === name);
+
+        if (!skill) throw new Error(`Skill ${name} not found`);
+        if (!skill.install || !Array.isArray(skill.install)) {
+            throw new Error(`Skill ${name} has no installation instructions`);
+        }
+
+        const { execSync } = await import('node:child_process');
+        let output = `[install] Starting installation for ${name}...\n`;
+
+        for (const step of skill.install) {
+            output += `[install] Execution step: ${step.label || step.id} (${step.kind})\n`;
+            try {
+                let cmd = '';
+                switch (step.kind) {
+                    case 'go':
+                        cmd = `go install ${step.module}`;
+                        break;
+                    case 'npm':
+                        cmd = `npm install -g ${step.module || step.id}`;
+                        break;
+                    case 'brew':
+                        cmd = `brew install ${step.id}`;
+                        break;
+                    case 'pip':
+                        cmd = `pip install ${step.id}`;
+                        break;
+                    case 'shell':
+                        cmd = step.command;
+                        break;
+                    default:
+                        output += `[install] WARNING: Unknown installation kind: ${step.kind}\n`;
+                        continue;
+                }
+
+                if (cmd) {
+                    output += `[install] Running: ${cmd}\n`;
+                    const res = execSync(cmd, { stdio: 'pipe', encoding: 'utf8' });
+                    output += res + '\n';
+                }
+            } catch (err: any) {
+                output += `[install] ERROR: ${err.message}\n`;
+                if (err.stdout) output += err.stdout + '\n';
+                if (err.stderr) output += err.stderr + '\n';
+                return { success: false, output };
+            }
+        }
+
+        // Refresh registry after installation
+        this.skillRegistry.refreshPromptSkills();
+
+        output += `[install] Successfully installed ${name}.\n`;
+        return { success: true, output };
     }
 
     getOverviewStats(): { instances: number, sessions: number, cronJobs: number, tickInterval: number } {

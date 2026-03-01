@@ -5,3 +5,4 @@
 export * from './types.js';
 export * from './SkillRegistry.js';
 export * from './SkillMcpServer.js';
+export * from './SkillMdLoader.js';

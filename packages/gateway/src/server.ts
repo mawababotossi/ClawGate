@@ -274,6 +274,16 @@ async function main(): Promise<void> {
         res.json(skills);
     });
 
+    // API: Install skill dependencies
+    app.post('/api/skills/:name/install', async (req, res) => {
+        try {
+            const result = await gateway.installSkill(req.params.name);
+            res.json(result);
+        } catch (err: any) {
+            res.status(400).json({ status: 'error', message: err.message });
+        }
+    });
+
     // API: List available models
     app.get('/api/models', (req, res) => {
         const models = gateway.listAvailableModels();

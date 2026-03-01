@@ -437,12 +437,14 @@ function ToolsTab({ agent }: { agent: AgentConfig }) {
 
 // ─── Tab: Skills ─────────────────────────────────────────────────────────────
 
-function SkillsTab({ availableSkills, agent }: {
-    availableSkills: { native: any[]; project: any[] };
+function SkillsTab({ availableSkills, agent, onToggleSkill }: {
+    availableSkills: { native: any[]; project: any[]; prompt: any[] };
     agent: AgentConfig;
+    onToggleSkill: (skillName: string) => void;
 }) {
     const [search, setSearch] = useState('');
     const granted = agent.allowedPermissions ?? [];
+    const enabledSkills = agent.skills ?? [];
 
     const filterSkills = (list: any[]) =>
         list.filter(s => s.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -450,21 +452,33 @@ function SkillsTab({ availableSkills, agent }: {
 
     const native = filterSkills(availableSkills.native);
     const project = filterSkills(availableSkills.project);
+    const prompt = filterSkills(availableSkills.prompt || []);
 
-    const SkillRow = ({ skill }: { skill: any }) => {
-        const isGranted = granted.includes(skill.name);
+    const SkillRow = ({ skill, isPrompt }: { skill: any; isPrompt?: boolean }) => {
+        const isGranted = isPrompt ? enabledSkills.includes(skill.name) : granted.includes(skill.name);
         return (
-            <div style={{
-                padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
-            }}>
+            <div
+                className={`skill-item-interactive ${isGranted ? 'active' : ''} ${skill.status === 'disabled' ? 'disabled' : ''}`}
+                onClick={() => isPrompt && skill.status !== 'disabled' && onToggleSkill(skill.name)}
+                style={{
+                    padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                    cursor: (isPrompt && skill.status !== 'disabled') ? 'pointer' : 'default',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}
+            >
+                {isPrompt && isGranted && <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: 'var(--primary)' }} />}
+
                 <div style={{
                     width: 32, height: 32, borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                    background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isPrompt ? 'rgba(236,72,153,0.1)' : 'rgba(99,102,241,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '1rem',
                 }}>
-                    {skill.icon ?? '⚡'}
+                    {skill.icon ?? (isPrompt ? '🦞' : '⚡')}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
@@ -477,14 +491,30 @@ function SkillsTab({ availableSkills, agent }: {
                         }}>
                             {isGranted ? 'Active' : 'Blocked'}
                         </span>
-                        {skill.missing && (
-                            <span style={{ fontSize: '0.72rem', color: 'var(--warning)' }}>
-                                Missing: {skill.missing}
+                        {skill.status === 'disabled' && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--warning)', fontStyle: 'italic' }}>
+                                (Needs Setup)
                             </span>
                         )}
                     </div>
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>{skill.description}</p>
+                    {isPrompt && skill.status === 'disabled' && (
+                        <p style={{ fontSize: '10px', color: 'var(--danger)', marginTop: '4px', opacity: 0.8 }}>
+                            {skill.reason}
+                        </p>
+                    )}
                 </div>
+                {isPrompt && skill.status !== 'disabled' && (
+                    <div style={{ alignSelf: 'center' }}>
+                        <input
+                            type="checkbox"
+                            checked={isGranted}
+                            onChange={() => { }}
+                            className="permission-checkbox"
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    </div>
+                )}
             </div>
         );
     };
@@ -502,9 +532,19 @@ function SkillsTab({ availableSkills, agent }: {
                     />
                 </div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                    {native.length + project.length} shown
+                    {native.length + project.length + prompt.length} shown
                 </span>
             </div>
+
+            {prompt.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <SectionTitle>OpenClaw Skills — {prompt.length}</SectionTitle>
+                    <p className="text-xs text-muted mb-3">These skills are prompt-driven. Click to enable/disable for this agent.</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {prompt.map(s => <SkillRow key={s.name} skill={s} isPrompt />)}
+                    </div>
+                </div>
+            )}
 
             {project.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -683,7 +723,7 @@ export function Agents() {
     const [selectedAgentName, setSelectedAgentName] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [formData, setFormData] = useState<AgentConfig | null>(null);
-    const [availableSkills, setAvailableSkills] = useState<{ native: any[]; project: any[] }>({ native: [], project: [] });
+    const [availableSkills, setAvailableSkills] = useState<{ native: any[]; project: any[]; prompt: any[] }>({ native: [], project: [], prompt: [] });
     const [agentJobs, setAgentJobs] = useState<any[]>([]);
     const [agentMemory, setAgentMemory] = useState<any[]>([]);
     const [agentSessions, setAgentSessions] = useState<any[]>([]);
@@ -753,7 +793,7 @@ export function Agents() {
         setSelectedAgentName(null);
         setIsCreating(true);
         setActiveTab('overview');
-        setFormData({ name: '', model: 'gemini-2.0-flash', modelCallback: '', fallbackModels: [], allowedPermissions: [] });
+        setFormData({ name: '', model: 'gemini-2.0-flash', modelCallback: '', fallbackModels: [], allowedPermissions: [], skills: [] });
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -959,8 +999,18 @@ export function Agents() {
                                 {activeTab === 'tools' && (
                                     <ToolsTab agent={formData} />
                                 )}
-                                {activeTab === 'skills' && (
-                                    <SkillsTab availableSkills={availableSkills} agent={formData} />
+                                {activeTab === 'skills' && formData && (
+                                    <SkillsTab
+                                        availableSkills={availableSkills}
+                                        agent={formData}
+                                        onToggleSkill={(skillName) => {
+                                            const current = formData.skills ?? [];
+                                            const next = current.includes(skillName)
+                                                ? current.filter(s => s !== skillName)
+                                                : [...current, skillName];
+                                            setFormData({ ...formData, skills: next });
+                                        }}
+                                    />
                                 )}
                                 {activeTab === 'channels' && (
                                     <ChannelsTab sessions={agentSessions} />
