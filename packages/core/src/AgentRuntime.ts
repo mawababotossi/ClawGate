@@ -84,7 +84,7 @@ export class AgentRuntime extends EventEmitter {
         return bridge;
     }
 
-    private async getSessionId(userSessionId: string, bridge: ACPBridge, mcpServers: any[] = []): Promise<string> {
+    private async getSessionId(userSessionId: string, bridge: ACPBridge): Promise<string> {
         if (!this.sessionMap.has(userSessionId)) {
             let cwd = process.cwd();
             if (this.config.baseDir) {
@@ -93,20 +93,42 @@ export class AgentRuntime extends EventEmitter {
                     fs.mkdirSync(cwd, { recursive: true });
                 }
             }
-            const mcpServers = (this.config.mcpServers || []).map(s => {
+
+            const agentName = this.config.name;
+            const agentSkills = (this.config.skills || []).join(',');
+
+            const acpMcpServers = (this.config.mcpServers || []).map(s => {
                 if (s.url && s.url.includes('/api/mcp/messages')) {
+                    // Convert existing headers to tuple array if needed
+                    const existingHeaders: [string, string][] = Array.isArray(s.headers)
+                        ? s.headers.filter((h: any) => Array.isArray(h) && h.length === 2)
+                        : Object.entries(s.headers ?? {});
+
+                    // Filter duplicates
+                    const filteredHeaders = existingHeaders.filter(([key]) =>
+                        key !== 'x-agent-name' && key !== 'x-agent-skills'
+                    );
+
                     return {
                         ...s,
-                        headers: {
-                            ...s.headers,
-                            'x-agent-name': this.config.name,
-                            'x-agent-skills': (this.config.skills || []).join(',')
-                        }
+                        headers: [
+                            ...filteredHeaders,
+                            ['x-agent-name', agentName],
+                            ['x-agent-skills', agentSkills],
+                        ] as [string, string][]
                     };
                 }
-                return s;
+
+                // Ensure other servers also use the tuple array format
+                return {
+                    ...s,
+                    headers: Array.isArray(s.headers)
+                        ? s.headers
+                        : Object.entries(s.headers ?? {})
+                };
             });
-            const acpSessionId = await bridge.createSession(cwd, mcpServers);
+
+            const acpSessionId = await bridge.createSession(cwd, acpMcpServers);
             this.sessionMap.set(userSessionId, acpSessionId);
         }
         return this.sessionMap.get(userSessionId)!;
@@ -180,14 +202,7 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
         const bridge = await this.getBridge(msg.sessionId);
 
         const isNewSession = !this.sessionMap.has(msg.sessionId);
-        const secret = process.env['DASHBOARD_SECRET'] || '';
-        const mcpServers = (this.config.mcpServers || []).map(s => {
-            if (!secret || s.url.includes('token=')) return s;
-            const separator = s.url.includes('?') ? '&' : '?';
-            return { ...s, url: `${s.url}${separator}token=${secret}` };
-        });
-
-        const acpSessionId = await this.getSessionId(msg.sessionId, bridge, mcpServers);
+        const acpSessionId = await this.getSessionId(msg.sessionId, bridge);
 
         // Traitement des pièces jointes reçues
         const attachmentBlock = msg.attachments && msg.attachments.length > 0

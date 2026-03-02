@@ -58,12 +58,12 @@ export class Gateway implements IGateway {
 
         const apiPort = config.gatewayPort ?? 3002;
         const localMcpUrl = `http://localhost:${apiPort}/api/mcp/messages`;
-        const localMcpServerPrototype = {
+        const makeMcpServerEntry = () => ({
             name: 'geminiclaw-skills',
             type: 'sse',
             url: localMcpUrl,
-            headers: []
-        };
+            headers: [] as [string, string][]
+        });
 
         const agents = (config.agents as AgentConfig[]).map(agent => {
             // Start with a clean list, excluding any existing 'geminiclaw-skills' entries
@@ -72,10 +72,13 @@ export class Gateway implements IGateway {
                 s.name !== 'geminiclaw-skills' && s.url !== localMcpUrl
             );
 
-            // Ensure all remaining servers have a 'headers' field (required by recent gemini-cli)
+            // Ensure all remaining servers have a 'headers' field in the correct [string, string][] format
             const mcpServers = [
-                localMcpServerPrototype,
-                ...otherServers.map(s => ({ ...s, headers: s.headers || [] }))
+                makeMcpServerEntry(),
+                ...otherServers.map(s => ({
+                    ...s,
+                    headers: Array.isArray(s.headers) ? s.headers : Object.entries(s.headers ?? {})
+                }))
             ];
 
             return {
