@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Cron } from 'croner';
 import { StreamingBuffer } from './StreamingBuffer.js';
+import { ModelCooldownManager } from './ModelCooldownManager.js';
 
 export class AgentRuntime extends EventEmitter {
     private config: AgentConfig;
@@ -32,6 +33,7 @@ export class AgentRuntime extends EventEmitter {
     private _status: NonNullable<AgentConfig['status']> = 'Healthy';
     private journalQueue: string[] = [];
     private journalFlushing = false;
+    private cooldown = new ModelCooldownManager();
 
     constructor(
         config: AgentConfig,
@@ -251,6 +253,9 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
                     }
                 }
             });
+
+            // If we reached here, the model worked
+            this.cooldown.recordSuccess(bridge.getModel());
 
             await streamingBuffer?.flushNow();
         } catch (err: any) {
@@ -571,77 +576,84 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
         msg: InboundMessage,
         originalError: unknown,
     ): Promise<AgentResponse> {
-        const fallbacks = [...(this.config.modelCallback ? [this.config.modelCallback] : []), ...(this.config.fallbackModels ?? [])];
-        if (fallbacks.length === 0) {
+        // Record failure for the model that just failed
+        const currentSid = msg.sessionId;
+        const failedBridge = this.bridges.get(currentSid);
+        if (failedBridge) {
+            this.cooldown.recordFailure(failedBridge.getModel());
+        }
+
+        const candidates = [
+            this.config.model,
+            ...(this.config.modelCallback ? [this.config.modelCallback] : []),
+            ...(this.config.fallbackModels ?? [])
+        ];
+
+        const fallbackModel = this.cooldown.pickAvailable(candidates);
+
+        if (!fallbackModel) {
             this._status = 'Dead';
             throw originalError;
         }
 
-        for (const fallbackModel of fallbacks) {
-            try {
-                console.warn(`[core] Primary model failed, trying fallback: ${fallbackModel}`);
-                // Shutdown current bridge and restart with fallback
-                // Isolation: shutdown current session's bridge if it exists
-                const sid = msg.sessionId;
-                const oldBridge = this.bridges.get(sid);
-                if (oldBridge) {
-                    oldBridge.stop();
-                    this.bridges.delete(sid);
-                    this.sessionMap.delete(sid);
-                }
-
-                // Clear session map to create new sessions for the fallback model
-
-
-                const fbBridge = new ACPBridge(
-                    fallbackModel,
-                    this.config.allowedPermissions ?? []
-                );
-                await fbBridge.start({
-                    authType: this.config.authType,
-                    apiKey: this.config.apiKey
-                });
-                // Note: we don't save the fallback bridge to this.bridges permanently 
-                // to avoid session corruption when falling back across models.
-
-                const acpSessionId = await this.getSessionId(msg.sessionId, fbBridge);
-
-                let responseText = '';
-                let thoughtChunks = '';
-                await fbBridge.prompt(acpSessionId, msg.text, (update) => {
-                    if (update.sessionUpdate === 'agent_message_chunk') {
-                        responseText += update.content.text;
-                    } else if (update.sessionUpdate === 'agent_thought_chunk') {
-                        thoughtChunks += update.content.text;
-                    }
-                });
-
-                const { cleanText: finalResponse, thought: finalThought } = this.separateThoughtFromResponse(
-                    responseText,
-                    thoughtChunks.trim()
-                );
-
-                this.transcripts.append(msg.sessionId, {
-                    role: 'assistant',
-                    content: finalResponse,
-                    thought: finalThought || undefined,
-                    timestamp: Date.now(),
-                });
-
-                this._status = 'Healthy';
-
-                return {
-                    text: finalResponse,
-                    sessionId: msg.sessionId,
-                    thought: finalThought || undefined
-                };
-            } catch (fallbackErr) {
-                console.warn(`[core] Fallback ${fallbackModel} also failed:`, fallbackErr);
+        try {
+            console.warn(`[core] Failed, trying next available model: ${fallbackModel}`);
+            // Shutdown current bridge and restart with fallback
+            const sid = msg.sessionId;
+            const oldBridge = this.bridges.get(sid);
+            if (oldBridge) {
+                oldBridge.stop();
+                this.bridges.delete(sid);
+                this.sessionMap.delete(sid);
             }
-        }
 
-        this._status = 'Dead';
-        throw originalError;
+            const fbBridge = new ACPBridge(
+                fallbackModel,
+                this.config.allowedPermissions ?? []
+            );
+            await fbBridge.start({
+                authType: this.config.authType,
+                apiKey: this.config.apiKey
+            });
+
+            const acpSessionId = await this.getSessionId(msg.sessionId, fbBridge);
+
+            let responseText = '';
+            let thoughtChunks = '';
+            await fbBridge.prompt(acpSessionId, msg.text, (update) => {
+                if (update.sessionUpdate === 'agent_message_chunk') {
+                    responseText += update.content.text;
+                } else if (update.sessionUpdate === 'agent_thought_chunk') {
+                    thoughtChunks += update.content.text;
+                }
+            });
+
+            const { cleanText: finalResponse, thought: finalThought } = this.separateThoughtFromResponse(
+                responseText,
+                thoughtChunks.trim()
+            );
+
+            this.transcripts.append(msg.sessionId, {
+                role: 'assistant',
+                content: finalResponse,
+                thought: finalThought || undefined,
+                timestamp: Date.now(),
+            });
+
+            this._status = 'Healthy';
+            this.cooldown.recordSuccess(fallbackModel);
+
+            return {
+                text: finalResponse,
+                sessionId: msg.sessionId,
+                thought: finalThought || undefined
+            };
+        } catch (fallbackErr) {
+            console.warn(`[core] Fallback ${fallbackModel} also failed:`, fallbackErr);
+            this.cooldown.recordFailure(fallbackModel);
+            // Recursive call to try next available fallback
+            return this.tryFallbacks(msg, fallbackErr);
+        }
     }
 
     async checkHealth(userSessionId?: string): Promise<boolean> {

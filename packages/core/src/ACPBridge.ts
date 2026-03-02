@@ -29,6 +29,10 @@ export class ACPBridge {
         private allowedPermissions: string[] = []
     ) { }
 
+    public getModel(): string {
+        return this.model;
+    }
+
     async start(options?: { authType?: string; apiKey?: string }): Promise<void> {
         let cmd = 'gemini';
         // Fallback for environments where global bin is not in PATH (like PM2)

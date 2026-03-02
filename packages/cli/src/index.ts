@@ -3,6 +3,10 @@ import { Command } from 'commander';
 import { configureCommand } from './commands/configure.js';
 import { startCommand } from './commands/start.js';
 import { stopCommand } from './commands/stop.js';
+import { onboardCommand } from './commands/onboard.js';
+import { doctorCommand } from './commands/doctor.js';
+import { statusCommand } from './commands/status.js';
+import { auditCommand } from './commands/audit.js';
 
 const program = new Command();
 
@@ -14,6 +18,10 @@ program
 program.addCommand(configureCommand);
 program.addCommand(startCommand);
 program.addCommand(stopCommand);
+program.addCommand(onboardCommand);
+program.addCommand(doctorCommand);
+program.addCommand(statusCommand);
+program.addCommand(auditCommand);
 
 // Fallback to help
 if (process.argv.length === 2) {

@@ -2,13 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = `http://${window.location.hostname}:3002/api`;
 
-// Use an environment variable for the secret. 
-// In Vite, this must start with VITE_ to be exposed to the client.
-const DASHBOARD_SECRET = import.meta.env.VITE_DASHBOARD_SECRET || '';
+// Use VITE_API_TOKEN for REST API authentication
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || import.meta.env.VITE_DASHBOARD_SECRET || '';
 
 axios.interceptors.request.use((config) => {
-    if (DASHBOARD_SECRET) {
-        config.headers.Authorization = `Bearer ${DASHBOARD_SECRET}`;
+    if (API_TOKEN) {
+        config.headers.Authorization = `Bearer ${API_TOKEN}`;
     }
     return config;
 });

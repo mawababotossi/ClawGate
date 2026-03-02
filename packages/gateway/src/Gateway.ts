@@ -25,6 +25,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { MessageQueue } from './MessageQueue.js';
 import type { GatewayConfig, ChannelConfig, CronJob } from './types.js';
+import { NodeManager } from './NodeManager.js';
+import type { WebSocket } from 'ws';
 
 const MIRROR_PEER_ID = 'dashboard_owner';
 
@@ -43,6 +45,7 @@ export class Gateway implements IGateway {
     private sendFileCallbacks = new Map<string, (peerId: string, att: OutboundAttachment) => Promise<void>>();
     private activityCallbacks = new Map<string, ActivityCallback>();
     private channelConfigs: Record<string, ChannelConfig> = {};
+    private nodeManager: NodeManager;
 
     constructor(private config: GatewayConfig) {
         this.sessions = new SessionStore(config.dataDir);
@@ -50,6 +53,8 @@ export class Gateway implements IGateway {
 
         const localSkillsPath = path.join(config.dataDir, 'skills');
         this.skillRegistry = new SkillRegistry([localSkillsPath], config.dataDir);
+
+        this.nodeManager = new NodeManager(this.skillRegistry, process.env['NODE_SECRET']);
 
         this.mcpServer = new SkillMcpServer(this.skillRegistry);
 
@@ -232,6 +237,10 @@ export class Gateway implements IGateway {
             this.sendFileCallbacks.set(channel, sendFileCallback);
         }
         console.log(`[gateway] Registered channel: ${channel}`);
+    }
+
+    public handleNodeConnection(ws: WebSocket): void {
+        this.nodeManager.handleConnection(ws);
     }
 
     private registerBuiltinSkills() {

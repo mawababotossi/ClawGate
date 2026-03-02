@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Response } from 'express';
 import { requireApiToken } from './middleware/apiAuth.js';
+import { WebSocketServer } from 'ws';
 
 // --- Log Interception ---
 const logClients = new Set<Response>();
@@ -107,6 +108,41 @@ async function main(): Promise<void> {
         console.log('[geminiclaw] WhatsApp adapter connecting (scan QR if needed)...');
     }
 
+    // Discord
+    if (config.channels['discord']?.enabled) {
+        const { DiscordAdapter } = await import('@geminiclaw/channel-discord');
+        const discordConfig = config.channels['discord'];
+        const discordToken = process.env['DISCORD_TOKEN'];
+        if (discordToken) {
+            const discord = new DiscordAdapter(discordToken, {
+                channels: discordConfig.channels,
+            });
+            discord.connect(gateway as any);
+            console.log('[geminiclaw] Discord adapter connected.');
+        } else {
+            console.warn('[geminiclaw] Discord enabled but DISCORD_TOKEN is missing.');
+        }
+    }
+
+    // Slack
+    if (config.channels['slack']?.enabled) {
+        const { SlackAdapter } = await import('@geminiclaw/channel-slack');
+        const slackConfig = config.channels['slack'] as any;
+        const slackToken = process.env['SLACK_BOT_TOKEN'];
+        const slackSecret = process.env['SLACK_SIGNING_SECRET'];
+        if (slackToken && slackSecret) {
+            const slack = new SlackAdapter({
+                token: slackToken,
+                signingSecret: slackSecret,
+                appToken: process.env['SLACK_APP_TOKEN'],
+            });
+            slack.connect(gateway as any);
+            console.log('[geminiclaw] Slack adapter connected.');
+        } else {
+            console.warn('[geminiclaw] Slack enabled but tokens (SLACK_BOT_TOKEN/SLACK_SIGNING_SECRET) are missing.');
+        }
+    }
+
     // ── Express API for Dashboard ─────────────────────────────────────────
     const express = (await import('express')).default;
     const cors = (await import('cors')).default;
@@ -125,15 +161,8 @@ async function main(): Promise<void> {
         express.json()(req, res, next);
     });
 
-    // Protect all /api routes except MCP (which manages its own auth via gemini-cli)
-    // and status (optional, but good for health checks)
-    app.use('/api/agents', requireApiToken);
-    app.use('/api/config', requireApiToken);
-    app.use('/api/channels', requireApiToken);
-    app.use('/api/transcripts', requireApiToken);
-    app.use('/api/sessions', requireApiToken);
-    app.use('/api/logs', requireApiToken);
-    app.use('/api/jobs', requireApiToken);
+    // Protect all /api routes including skills, agents, config, etc.
+    app.use('/api', requireApiToken);
 
     // Enable MCP SSE transport
 
@@ -522,9 +551,16 @@ async function main(): Promise<void> {
     });
 
     const apiPort = config.gatewayPort ?? 3002;
-    app.listen(apiPort, () => {
+    const server = app.listen(apiPort, () => {
         console.log(`[geminiclaw] Admin API ready on port ${apiPort}`);
     });
+
+    // --- WebSocket Server for Nodes ---
+    const wss = new WebSocketServer({ server });
+    wss.on('connection', (ws) => {
+        gateway.handleNodeConnection(ws);
+    });
+    console.log('[geminiclaw] WebSocket Node server attached.');
 
     // ── Graceful shutdown ─────────────────────────────────────────────────
     const shutdown = async (): Promise<void> => {

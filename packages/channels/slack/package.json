@@ -1,0 +1,18 @@
+{
+    "name": "@geminiclaw/channel-slack",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc -w"
+    },
+    "dependencies": {
+        "@slack/bolt": "^3.16.0"
+    },
+    "peerDependencies": {
+        "@geminiclaw/core": "workspace:*",
+        "@geminiclaw/memory": "workspace:*"
+    },
+    "license": "Apache-2.0"
+}

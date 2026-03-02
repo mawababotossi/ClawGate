@@ -12,6 +12,11 @@ export interface ChannelConfig {
     allowList?: string[];
     // WebChat-specific
     port?: number;
+    // Discord-specific
+    channels?: string[];
+    // Slack-specific
+    signingSecret?: string;
+    appToken?: string;
 }
 
 export interface CronJob {
