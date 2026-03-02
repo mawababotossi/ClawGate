@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/memory — JSON file-based session store (no native compilation)
+ * @clawgate/memory — JSON file-based session store (no native compilation)
  * Uses lowdb v7 for atomic JSON persistence.
  */
 import { JSONFileSyncPreset } from 'lowdb/node';

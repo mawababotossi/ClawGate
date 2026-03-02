@@ -1,8 +1,8 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — Main server entrypoint
+ * ClawGate — Main server entrypoint
  *
- * Bootstraps gateway + channels from config/geminiclaw.json.
+ * Bootstraps gateway + channels from config/clawgate.json.
  */
 import 'dotenv/config';
 import { Gateway, loadConfig } from './index.js';
@@ -74,47 +74,47 @@ console.debug = (...args) => broadcastLog('debug', ...args);
 console.trace = (...args) => broadcastLog('trace', ...args);
 // ------------------------
 
-const CONFIG_PATH = process.env['CONFIG_PATH'] ?? './config/geminiclaw.json';
+const CONFIG_PATH = process.env['CONFIG_PATH'] ?? './config/clawgate.json';
 
 async function main(): Promise<void> {
-    console.log('[geminiclaw] Starting...');
+    console.log('[clawgate] Starting...');
 
     const config = loadConfig(CONFIG_PATH);
-    console.log(`[geminiclaw] Configuration loaded from: ${path.resolve(CONFIG_PATH)}`);
-    console.log(`[geminiclaw] Enabled channels: ${Object.keys(config.channels).filter(c => config.channels[c]?.enabled).join(', ')}`);
+    console.log(`[clawgate] Configuration loaded from: ${path.resolve(CONFIG_PATH)}`);
+    console.log(`[clawgate] Enabled channels: ${Object.keys(config.channels).filter(c => config.channels[c]?.enabled).join(', ')}`);
     const gateway = new Gateway(config);
 
     // ── Load channel adapters ─────────────────────────────────────────────
 
     // WebChat (always loaded — used as default dev channel)
     if (config.channels['webchat']?.enabled !== false) {
-        const WEBCHAT_MODULE = '@geminiclaw/channel-webchat';
+        const WEBCHAT_MODULE = '@clawgate/channel-webchat';
         const { WebChatAdapter } = await (import(WEBCHAT_MODULE) as any);
         const wcConfig = (config.channels['webchat'] ?? {}) as any;
         const wc = new WebChatAdapter(wcConfig.port ?? 3001);
         wc.connect(gateway as any);
-        console.log(`[geminiclaw] WebChat ready on port ${wcConfig.port ?? 3001}`);
+        console.log(`[clawgate] WebChat ready on port ${wcConfig.port ?? 3001}`);
     }
 
     // Telegram
     if (config.channels['telegram']?.enabled) {
-        const { TelegramAdapter } = await import('@geminiclaw/channel-telegram');
+        const { TelegramAdapter } = await import('@clawgate/channel-telegram');
         const tgConfig = config.channels['telegram'];
         if (tgConfig?.token) {
             const tg = new TelegramAdapter(tgConfig.token, {
                 mentionOnly: tgConfig.mentionOnly ?? false,
             });
             tg.connect(gateway as any);
-            console.log('[geminiclaw] Telegram adapter connected.');
+            console.log('[clawgate] Telegram adapter connected.');
         } else {
-            console.warn('[geminiclaw] Telegram enabled but TELEGRAM_BOT_TOKEN is missing.');
+            console.warn('[clawgate] Telegram enabled but TELEGRAM_BOT_TOKEN is missing.');
         }
     }
 
     // WhatsApp
     let waAdapter: any = null;
     if (config.channels['whatsapp']?.enabled) {
-        const { WhatsAppAdapter } = await import('@geminiclaw/channel-whatsapp');
+        const { WhatsAppAdapter } = await import('@clawgate/channel-whatsapp');
         const waCfg = config.channels['whatsapp'];
         const wa = new WhatsAppAdapter({
             mentionOnly: waCfg?.mentionOnly ?? false,
@@ -122,12 +122,12 @@ async function main(): Promise<void> {
         });
         waAdapter = wa;
         wa.connect(gateway as any);
-        console.log('[geminiclaw] WhatsApp adapter connecting (scan QR if needed)...');
+        console.log('[clawgate] WhatsApp adapter connecting (scan QR if needed)...');
     }
 
     // Discord
     if (config.channels['discord']?.enabled) {
-        const { DiscordAdapter } = await import('@geminiclaw/channel-discord');
+        const { DiscordAdapter } = await import('@clawgate/channel-discord');
         const discordConfig = config.channels['discord'];
         const discordToken = process.env['DISCORD_TOKEN'];
         if (discordToken) {
@@ -135,15 +135,15 @@ async function main(): Promise<void> {
                 channels: discordConfig.channels,
             });
             discord.connect(gateway as any);
-            console.log('[geminiclaw] Discord adapter connected.');
+            console.log('[clawgate] Discord adapter connected.');
         } else {
-            console.warn('[geminiclaw] Discord enabled but DISCORD_TOKEN is missing.');
+            console.warn('[clawgate] Discord enabled but DISCORD_TOKEN is missing.');
         }
     }
 
     // Slack
     if (config.channels['slack']?.enabled) {
-        const { SlackAdapter } = await import('@geminiclaw/channel-slack');
+        const { SlackAdapter } = await import('@clawgate/channel-slack');
         const slackConfig = config.channels['slack'] as any;
         const slackToken = process.env['SLACK_BOT_TOKEN'];
         const slackSecret = process.env['SLACK_SIGNING_SECRET'];
@@ -154,9 +154,9 @@ async function main(): Promise<void> {
                 appToken: process.env['SLACK_APP_TOKEN'],
             });
             slack.connect(gateway as any);
-            console.log('[geminiclaw] Slack adapter connected.');
+            console.log('[clawgate] Slack adapter connected.');
         } else {
-            console.warn('[geminiclaw] Slack enabled but tokens (SLACK_BOT_TOKEN/SLACK_SIGNING_SECRET) are missing.');
+            console.warn('[clawgate] Slack enabled but tokens (SLACK_BOT_TOKEN/SLACK_SIGNING_SECRET) are missing.');
         }
     }
 
@@ -639,7 +639,7 @@ async function main(): Promise<void> {
 
     const apiPort = config.gatewayPort ?? 3002;
     const server = app.listen(apiPort, () => {
-        console.log(`[geminiclaw] Admin API ready on port ${apiPort}`);
+        console.log(`[clawgate] Admin API ready on port ${apiPort}`);
     });
 
     // --- WebSocket Server for Nodes ---
@@ -647,11 +647,11 @@ async function main(): Promise<void> {
     wss.on('connection', (ws) => {
         gateway.handleNodeConnection(ws);
     });
-    console.log('[geminiclaw] WebSocket Node server attached.');
+    console.log('[clawgate] WebSocket Node server attached.');
 
     // ── Graceful shutdown ─────────────────────────────────────────────────
     const shutdown = async (): Promise<void> => {
-        console.log('\n[geminiclaw] Shutting down...');
+        console.log('\n[clawgate] Shutting down...');
         await gateway.shutdown();
         process.exit(0);
     };
@@ -659,10 +659,10 @@ async function main(): Promise<void> {
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
 
-    console.log('[geminiclaw] 🚀 Ready. Ctrl+C to stop.');
+    console.log('[clawgate] 🚀 Ready. Ctrl+C to stop.');
 }
 
 main().catch((err) => {
-    console.error('[geminiclaw] Fatal error:', err);
+    console.error('[clawgate] Fatal error:', err);
     process.exit(1);
 });

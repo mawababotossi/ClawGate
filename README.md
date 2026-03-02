@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🦀 GeminiClaw — ACP Gateway
+# 🦀 ClawGate — ACP Gateway
 
 **Turn `gemini-cli`, `claude-code`, and `codex` into fully autonomous, multi-channel AI agents.**
 
@@ -13,7 +13,7 @@
 
 ---
 
-## The Problem GeminiClaw Solves
+## The Problem ClawGate Solves
 
 ### The OpenClaw OAuth Ban Wave
 
@@ -33,20 +33,20 @@ A Google DeepMind engineer described the enforcement publicly: the company had b
 
 > The core issue was not technical — it was economic. Antigravity's OAuth infrastructure offered subsidized access to frontier models. Using it to power an autonomous agent that burns millions of tokens per session violated the implicit contract of flat-rate pricing. **Subscription OAuth from any provider is subsidized access running on borrowed time.**
 
-### The GeminiClaw Answer
+### The ClawGate Answer
 
-GeminiClaw was built from the ground up to sidestep this entire problem. Instead of extracting and reusing OAuth tokens from a subsidized IDE backend, it drives the **official `gemini-cli` binary directly** through its own supported integration protocol: `--experimental-acp`.
+ClawGate was built from the ground up to sidestep this entire problem. Instead of extracting and reusing OAuth tokens from a subsidized IDE backend, it drives the **official `gemini-cli` binary directly** through its own supported integration protocol: `--experimental-acp`.
 
 | Approach | Auth method | Risk |
 |---|---|---|
 | OpenClaw + Antigravity OAuth | Extracts tokens from a subsidized IDE backend | ❌ ToS violation, account ban, no refund |
-| GeminiClaw + `gemini-cli` ACP | Runs the official binary you already authenticated | ✅ Fully within Google's intended use |
+| ClawGate + `gemini-cli` ACP | Runs the official binary you already authenticated | ✅ Fully within Google's intended use |
 
-The `--experimental-acp` mode (or internal ACP protocols for Claude/Codex) is the **same protocol** used by Zed, Emacs, and other official integrations. GeminiClaw wraps these as long-running supervised subprocesses. Your account authenticates the CLI once via the standard flow, and GeminiClaw never touches your API keys or tokens during execution except to pass them to the official binary.
+The `--experimental-acp` mode (or internal ACP protocols for Claude/Codex) is the **same protocol** used by Zed, Emacs, and other official integrations. ClawGate wraps these as long-running supervised subprocesses. Your account authenticates the CLI once via the standard flow, and ClawGate never touches your API keys or tokens during execution except to pass them to the official binary.
 
 ---
 
-**GeminiClaw** is an open-source **agent supervision framework** built around the **ACP (Agent Communication Protocol)**. It supports multiple providers out-of-the-box:
+**ClawGate** is an open-source **agent supervision framework** built around the **ACP (Agent Communication Protocol)**. It supports multiple providers out-of-the-box:
 
 - **Google Gemini** (via `gemini-cli`)
 - **Anthropic Claude** (via `claude-code`)
@@ -62,15 +62,15 @@ It exposes these models as persistent autonomous agents equipped with:
 
 ---
 
-## 2. Why GeminiClaw?
+## 2. Why ClawGate?
 
 ### The Problem: Subscription OAuth Risk
 In early 2025, many AI framework users faced account suspensions for using "scraping" or "OAuth token injection" methods to access frontier models. These methods violate the implicit contract of flat-rate pricing.
 
 ### The Answer: Official ACP Integration
-GeminiClaw drives **official CLI binaries directly** through their supported integration protocols (ACP). This is the same protocol used by official IDE integrations like Zed. Your account authenticates the CLI once, and GeminiClaw never touches your raw tokens.
+ClawGate drives **official CLI binaries directly** through their supported integration protocols (ACP). This is the same protocol used by official IDE integrations like Zed. Your account authenticates the CLI once, and ClawGate never touches your raw tokens.
 
-| Feature | Gemini API | GeminiClaw |
+| Feature | Gemini API | ClawGate |
 |---|---|---|
 | Persistent memory across sessions | ❌ | ✅ JSONL + `MEMORY.md` |
 | Visible Chain-of-Thought | ❌ | ✅ Native `thought_chunk` stream |
@@ -85,7 +85,7 @@ GeminiClaw drives **official CLI binaries directly** through their supported int
 
 ```
                     ┌──────────────────────────────────────────┐
-                    │            GeminiClaw Gateway             │
+                    │            ClawGate Gateway             │
   Telegram ─────────┤                                          │
   WhatsApp ─────────┤  MessageQueue (FIFO per session)         │
   WebChat  ─────────┤       │                                  │
@@ -121,21 +121,21 @@ GeminiClaw drives **official CLI binaries directly** through their supported int
 ## 4. Project Structure
 
 ```
-geminiclaw/
+clawgate/
 ├── packages/
-│   ├── core/           @geminiclaw/core       ← Runtime, ACP Bridge, Failover
-│   ├── gateway/        @geminiclaw/gateway    ← Main router, ingest(), sessions, Nodes
-│   ├── memory/         @geminiclaw/memory     ← JSONL read/write
-│   ├── skills/         @geminiclaw/skills     ← MCP Server & Registry
+│   ├── core/           @clawgate/core       ← Runtime, ACP Bridge, Failover
+│   ├── gateway/        @clawgate/gateway    ← Main router, ingest(), sessions, Nodes
+│   ├── memory/         @clawgate/memory     ← JSONL read/write
+│   ├── skills/         @clawgate/skills     ← MCP Server & Registry
 │   ├── channels/
-│   │   ├── telegram/   @geminiclaw/channel-telegram
-│   │   ├── whatsapp/   @geminiclaw/channel-whatsapp
-│   │   ├── webchat/    @geminiclaw/channel-webchat
-│   │   ├── discord/    @geminiclaw/channel-discord
-│   │   └── slack/      @geminiclaw/channel-slack
-│   └── dashboard/      @geminiclaw/dashboard  ← React Admin UI
+│   │   ├── telegram/   @clawgate/channel-telegram
+│   │   ├── whatsapp/   @clawgate/channel-whatsapp
+│   │   ├── webchat/    @clawgate/channel-webchat
+│   │   ├── discord/    @clawgate/channel-discord
+│   │   └── slack/      @clawgate/channel-slack
+│   └── dashboard/      @clawgate/dashboard  ← React Admin UI
 ├── config/
-│   └── geminiclaw.json          ← Main configuration
+│   └── clawgate.json          ← Main configuration
 ├── data/                        ← Transcripts, sessions, MEMORY.md
 ├── docker-compose.yml
 └── scripts/
@@ -156,7 +156,7 @@ gemini auth          # perform one-time Google authentication
 gemini --version     # verification
 ```
 
-> GeminiClaw launches `gemini --experimental-acp` as a supervised subprocess. Authentication via `gemini auth` is mandatory — no extra API keys are required for the base setup.
+> ClawGate launches `gemini --experimental-acp` as a supervised subprocess. Authentication via `gemini auth` is mandatory — no extra API keys are required for the base setup.
 
 ---
 
@@ -165,14 +165,14 @@ gemini --version     # verification
 ### Via Installation Script
 
 ```bash
-curl -fsSL https://geminiclaw.ai/install.sh | bash
+curl -fsSL https://clawgate.ai/install.sh | bash
 ```
 
 ### Manual Installation
 
 ```bash
-git clone https://github.com/mawababotossi/geminiclaw.git
-cd geminiclaw
+git clone https://github.com/mawababotossi/clawgate.git
+cd clawgate
 pnpm install
 pnpm build
 ```
@@ -184,12 +184,12 @@ pnpm build
 ### Step 1 — Copy Example Config
 
 ```bash
-cp config/geminiclaw.example.json config/geminiclaw.json
+cp config/clawgate.example.json config/clawgate.json
 ```
 
 ### Step 2 — Minimum Configuration
 
-Edit `config/geminiclaw.json`:
+Edit `config/clawgate.json`:
 
 ```json
 {
@@ -215,10 +215,10 @@ pnpm start
 Or using the CLI:
 
 ```bash
-geminiclaw start      # starts gateway + dashboard in background
-geminiclaw stop       # clean shutdown
-geminiclaw status     # show agents and connection status
-geminiclaw onboard    # guided configuration wizard
+clawgate start      # starts gateway + dashboard in background
+clawgate stop       # clean shutdown
+clawgate status     # show agents and connection status
+clawgate onboard    # guided configuration wizard
 ```
 
 **Dashboard available at: http://localhost:5173**
@@ -227,7 +227,7 @@ geminiclaw onboard    # guided configuration wizard
 
 ## 8. Configuration Reference
 
-### Agent Configuration (`geminiclaw.json`)
+### Agent Configuration (`clawgate.json`)
 
 | Field | Type | Description |
 |---|---|---|
@@ -272,11 +272,11 @@ geminiclaw onboard    # guided configuration wizard
 
 | Channel | Package | Prerequisites |
 |---|---|---|
-| **Telegram** | `@geminiclaw/channel-telegram` | Bot Token from BotFather |
-| **WhatsApp** | `@geminiclaw/channel-whatsapp` | QR Scan via Baileys (first time) |
-| **WebChat** | `@geminiclaw/channel-webchat` | None |
-| **Discord** | `@geminiclaw/channel-discord` | Discord Bot Token |
-| **Slack** | `@geminiclaw/channel-slack` | Signing Secret + App Token |
+| **Telegram** | `@clawgate/channel-telegram` | Bot Token from BotFather |
+| **WhatsApp** | `@clawgate/channel-whatsapp` | QR Scan via Baileys (first time) |
+| **WebChat** | `@clawgate/channel-webchat` | None |
+| **Discord** | `@clawgate/channel-discord` | Discord Bot Token |
+| **Slack** | `@clawgate/channel-slack` | Signing Secret + App Token |
 
 ### Cross-Channel Mirroring
 Owner messages and agent responses can be synchronized between channels (e.g., WebChat ↔ WhatsApp), allowing you to follow the conversation anywhere.

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — Audit Command
+ * ClawGate — Audit Command
  */
 import { Command } from 'commander';
 import fs from 'node:fs';
@@ -10,7 +10,7 @@ export const auditCommand = new Command('audit')
     .description('Audit logs for potential issues and anomalies')
     .option('--limit <n>', 'Limit of lines to scan per file', '500')
     .action(async (opts) => {
-        console.log('🕵️  GeminiClaw Audit — Log Scanning\n');
+        console.log('🕵️  ClawGate Audit — Log Scanning\n');
 
         const logFiles = [
             'packages/gateway/gateway.log',

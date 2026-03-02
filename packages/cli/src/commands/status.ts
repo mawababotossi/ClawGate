@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — Status Command
+ * ClawGate — Status Command
  */
 import { Command } from 'commander';
 import fs from 'node:fs';
@@ -9,10 +9,10 @@ import { execSync } from 'node:child_process';
 import { getRootDirSync } from '../utils/paths.js';
 
 export const statusCommand = new Command('status')
-    .description('Monitor running GeminiClaw processes')
+    .description('Monitor running ClawGate processes')
     .option('--all', 'Show detailed process and socket info')
     .action(async (opts) => {
-        console.log('📊 GeminiClaw Status\n');
+        console.log('📊 ClawGate Status\n');
 
         const services = [
             { name: 'Gateway', dir: 'packages/gateway', pid: 'gateway.pid' },

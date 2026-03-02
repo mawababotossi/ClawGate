@@ -1,8 +1,8 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/gateway — Config loader
+ * @clawgate/gateway — Config loader
  *
- * Reads config/geminiclaw.json, expands ${ENV_VAR} placeholders,
+ * Reads config/clawgate.json, expands ${ENV_VAR} placeholders,
  * and validates the structure.
  */
 import { readFileSync } from 'node:fs';
@@ -26,7 +26,7 @@ export function loadConfig(configPath: string): GatewayConfig {
     const dataDir = process.env['DATA_DIR'] ?? path.resolve(configDir, '../data');
 
     return {
-        project: parsed.project ?? { name: 'GeminiClaw' },
+        project: parsed.project ?? { name: 'ClawGate' },
         providers: parsed.providers ?? [],
         dataDir,
         agents: parsed.agents ?? [],

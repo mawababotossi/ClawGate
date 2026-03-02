@@ -1,19 +1,18 @@
 {
-  "name": "@geminiclaw/cli",
+  "name": "@clawgate/cli",
   "version": "0.1.0",
+  "description": "Configuration CLI for ClawGate",
   "type": "module",
-  "description": "Configuration CLI for GeminiClaw",
-  "main": "dist/index.js",
   "bin": {
-    "geminiclaw": "./dist/index.js"
+    "clawgate": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w"
+    "clean": "rm -rf dist"
   },
   "dependencies": {
-    "commander": "^13.0.0",
-    "inquirer": "^10.0.0"
+    "@clawgate/core": "workspace:*",
+    "@clawgate/gateway": "workspace:*"
   },
   "license": "Apache-2.0"
 }

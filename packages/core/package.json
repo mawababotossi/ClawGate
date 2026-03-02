@@ -1,5 +1,5 @@
 {
-    "name": "@geminiclaw/core",
+    "name": "@clawgate/core",
     "version": "0.1.0",
     "description": "Headless AI runtime — wrapper around @google/gemini-cli-core",
     "type": "module",
@@ -12,8 +12,8 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@geminiclaw/memory": "workspace:*",
-        "@geminiclaw/skills": "workspace:^",
+        "@clawgate/memory": "workspace:*",
+        "@clawgate/skills": "workspace:^",
         "@google/gemini-cli-core": "latest",
         "croner": "^10.0.1",
         "node-fetch": "2.7.0",

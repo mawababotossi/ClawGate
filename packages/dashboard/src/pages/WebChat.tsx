@@ -221,7 +221,7 @@ export function WebChat() {
             <div className="page-header flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 700 }}>Chat</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Talk directly with your deployed GeminiClaw agents.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Talk directly with your deployed ClawGate agents.</p>
                 </div>
             </div>
 
@@ -250,7 +250,7 @@ export function WebChat() {
                                 <div className="welcome-icon">
                                     <Sparkles size={40} className="text-primary" />
                                 </div>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>GeminiClaw Chat</h2>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>ClawGate Chat</h2>
                                 <p style={{ maxWidth: '400px', margin: '0 auto', color: 'var(--text-muted)' }}>
                                     Your personal gateway to AI agents. Type a message below to begin your adventure.
                                 </p>
@@ -324,7 +324,7 @@ export function WebChat() {
                         <div className="chat-input-wrapper">
                             <textarea
                                 ref={inputRef}
-                                placeholder={isConnected ? "Message GeminiClaw..." : "Connecting..."}
+                                placeholder={isConnected ? "Message ClawGate..." : "Connecting..."}
                                 value={inputMessage}
                                 onChange={handleInput}
                                 onKeyDown={handleKeyDown}

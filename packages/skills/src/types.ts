@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/skills — Types defining what a Skill is.
+ * @clawgate/skills — Types defining what a Skill is.
  */
 import type { FunctionDeclaration, Schema } from '@google/genai';
 import { SkillMdEnvVar } from './SkillMdLoader.js';

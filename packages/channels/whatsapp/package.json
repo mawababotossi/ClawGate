@@ -1,5 +1,5 @@
 {
-    "name": "@geminiclaw/channel-whatsapp",
+    "name": "@clawgate/channel-whatsapp",
     "version": "0.1.0",
     "description": "WhatsApp channel adapter via Baileys",
     "type": "module",
@@ -12,8 +12,8 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@geminiclaw/core": "workspace:*",
-        "@geminiclaw/memory": "workspace:*",
+        "@clawgate/core": "workspace:*",
+        "@clawgate/memory": "workspace:*",
         "@whiskeysockets/baileys": "^6.7.9",
         "pino": "^9.0.0"
     },

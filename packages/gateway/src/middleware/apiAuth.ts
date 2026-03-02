@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/gateway — apiAuth middleware
+ * @clawgate/gateway — apiAuth middleware
  */
 import type { Request, Response, NextFunction } from 'express';
 import { timingSafeEqual } from 'node:crypto';

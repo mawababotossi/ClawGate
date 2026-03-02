@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/memory — Types and shared interfaces
+ * @clawgate/memory — Types and shared interfaces
  */
 
 export interface Session {

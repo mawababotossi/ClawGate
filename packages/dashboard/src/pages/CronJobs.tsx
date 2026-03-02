@@ -77,7 +77,7 @@ export function CronJobs() {
                         </div>
                         <h3 className="empty-state-title">No scheduled tasks found</h3>
                         <p className="empty-state-description">
-                            Either no cron jobs are configured in geminiclaw.json, or no agents have scheduled dynamic tasks.
+                            Either no cron jobs are configured in clawgate.json, or no agents have scheduled dynamic tasks.
                         </p>
                     </div>
                 ) : (

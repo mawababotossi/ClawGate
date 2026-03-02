@@ -1,13 +1,13 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/channel-telegram — TelegramAdapter
+ * @clawgate/channel-telegram — TelegramAdapter
  *
  * Uses Telegraf to receive messages and dispatch them through the Gateway.
  * Supports private chats, groups (with optional @mention gating), and photos.
  */
 import { Telegraf } from 'telegraf';
-import type { IGateway } from '@geminiclaw/core';
-import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
+import type { IGateway } from '@clawgate/core';
+import type { Attachment, OutboundAttachment } from '@clawgate/memory';
 
 const CHANNEL = 'telegram';
 

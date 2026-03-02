@@ -3,7 +3,7 @@ import path from 'node:path';
 
 /**
  * Updates or creates the .env file with the provided variables.
- * Does not overwrite existing non-GeminiClaw variables if possible.
+ * Does not overwrite existing non-ClawGate variables if possible.
  */
 export async function overwriteEnvVariables(newVars: Record<string, string>) {
     const envPath = path.resolve(process.cwd(), '../../.env');

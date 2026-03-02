@@ -1,5 +1,5 @@
 {
-    "name": "@geminiclaw/memory",
+    "name": "@clawgate/memory",
     "version": "0.1.0",
     "description": "Session persistence layer — JSON file store + JSONL transcripts",
     "type": "module",

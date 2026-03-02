@@ -5,13 +5,13 @@ import fs from 'node:fs';
 import { getRootDirSync } from '../utils/paths.js';
 
 export const startCommand = new Command('start')
-    .description('Start the GeminiClaw Gateway and Dashboard services')
+    .description('Start the ClawGate Gateway and Dashboard services')
     .action(async () => {
         const rootDir = getRootDirSync();
         const gatewayDir = path.join(rootDir, 'packages', 'gateway');
         const dashboardDir = path.join(rootDir, 'packages', 'dashboard');
 
-        console.log('🚀 Starting GeminiClaw services...');
+        console.log('🚀 Starting ClawGate services...');
 
         // 1. Start Gateway
         const gatewayLog = fs.openSync(path.join(gatewayDir, 'gateway.log'), 'a');
@@ -19,7 +19,7 @@ export const startCommand = new Command('start')
             cwd: gatewayDir,
             detached: true,
             stdio: ['ignore', gatewayLog, gatewayLog],
-            env: { ...process.env, CONFIG_PATH: path.join(rootDir, 'config', 'geminiclaw.json') }
+            env: { ...process.env, CONFIG_PATH: path.join(rootDir, 'config', 'clawgate.json') }
         });
         gateway.unref();
         fs.writeFileSync(path.join(gatewayDir, 'gateway.pid'), gateway.pid?.toString() || '');

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import type { WebSocket } from 'ws';
 import { RemoteSkillProxy } from './RemoteSkillProxy.js';
-import type { SkillRegistry } from '@geminiclaw/skills';
+import type { SkillRegistry } from '@clawgate/skills';
 
 export interface NodeInfo {
     id: string;

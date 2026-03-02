@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/core — ACPBridge
+ * @clawgate/core — ACPBridge
  */
 import { spawn, ChildProcess } from 'node:child_process';
 import readline from 'node:readline';

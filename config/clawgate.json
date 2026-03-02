@@ -1,6 +1,6 @@
 {
     "project": {
-        "name": "GeminiClaw",
+        "name": "ClawGate",
         "description": "Superviseur d'agents IA via ACP",
         "defaultModel": "gemini-2.0-flash"
     },
@@ -40,7 +40,7 @@
             },
             "mcpServers": [
                 {
-                    "name": "geminiclaw-skills",
+                    "name": "clawgate-skills",
                     "type": "sse",
                     "url": "http://localhost:3002/api/mcp/messages",
                     "headers": []
@@ -84,7 +84,7 @@
             },
             "mcpServers": [
                 {
-                    "name": "geminiclaw-skills",
+                    "name": "clawgate-skills",
                     "type": "sse",
                     "url": "http://localhost:3002/api/mcp/messages",
                     "headers": []
@@ -106,7 +106,7 @@
             },
             "mcpServers": [
                 {
-                    "name": "geminiclaw-skills",
+                    "name": "clawgate-skills",
                     "type": "sse",
                     "url": "http://localhost:3002/api/mcp/messages",
                     "headers": []

@@ -1,8 +1,8 @@
 {
-  "name": "gemini-claw",
+  "name": "claw-gate",
   "version": "0.1.0",
   "private": true,
-  "description": "Self-hosted AI agent gateway powered by gemini-cli — OpenClaw-inspired",
+  "description": "Self-hosted AI agent gateway — multi-provider ACP supervisor",
   "license": "Apache-2.0",
   "packageManager": "pnpm@9.0.0",
   "engines": {
@@ -10,7 +10,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "build": "pnpm --filter '@geminiclaw/*' run build",
+    "build": "pnpm --filter '@clawgate/*' run build",
     "dev": "pnpm -r --parallel run dev",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",

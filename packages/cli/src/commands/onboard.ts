@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — Onboarding Wizard
+ * ClawGate — Onboarding Wizard
  */
 import { Command } from 'commander';
 import inquirer from 'inquirer';
@@ -10,17 +10,17 @@ import { execSync } from 'node:child_process';
 import crypto from 'node:crypto';
 
 export const onboardCommand = new Command('onboard')
-    .description('Configure GeminiClaw interactively')
+    .description('Configure ClawGate interactively')
     .option('--install-daemon', 'Install a systemd service')
     .action(async (opts) => {
-        console.log('🤖 Bienvenue dans GeminiClaw Onboarding\n');
+        console.log('🤖 Bienvenue dans ClawGate Onboarding\n');
 
         const answers = await inquirer.prompt([
             {
                 type: 'input',
                 name: 'projectName',
                 message: 'Nom du projet :',
-                default: 'My GeminiClaw'
+                default: 'My ClawGate'
             },
             {
                 type: 'input',
@@ -57,7 +57,7 @@ export const onboardCommand = new Command('onboard')
             },
         ]);
 
-        const home = process.env['GEMINICLAW_HOME'] || path.join(process.env['HOME']!, '.geminiclaw');
+        const home = process.env['GEMINICLAW_HOME'] || path.join(process.env['HOME']!, '.clawgate');
 
         if (!fs.existsSync(home)) {
             fs.mkdirSync(home, { recursive: true });
@@ -81,11 +81,11 @@ export const onboardCommand = new Command('onboard')
             fs.mkdirSync(configDir, { recursive: true });
         }
 
-        const configPath = path.join(configDir, 'geminiclaw.json');
+        const configPath = path.join(configDir, 'clawgate.json');
         if (!fs.existsSync(configPath)) {
             const defaultConfig = {
                 project: {
-                    name: answers.projectName || 'My GeminiClaw',
+                    name: answers.projectName || 'My ClawGate',
                     defaultModel: "gemini-2.0-flash"
                 },
                 providers: [
@@ -129,14 +129,14 @@ export const onboardCommand = new Command('onboard')
         if (opts.installDaemon) {
             installSystemdDaemon(home);
         } else {
-            console.log('\n💡 Lance le gateway avec : geminiclaw start');
+            console.log('\n💡 Lance le gateway avec : clawgate start');
         }
     });
 
 function installSystemdDaemon(home: string) {
     const user = process.env['USER'] || 'root';
     const service = `[Unit]
-Description=GeminiClaw AI Gateway
+Description=ClawGate AI Gateway
 After=network-online.target
 Wants=network-online.target
 
@@ -153,16 +153,16 @@ Environment=NODE_ENV=production
 [Install]
 WantedBy=multi-user.target`;
 
-    const svcPath = `/etc/systemd/system/geminiclaw@${user}.service`;
+    const svcPath = `/etc/systemd/system/clawgate@${user}.service`;
     try {
-        fs.writeFileSync('/tmp/geminiclaw.service', service);
-        execSync(`sudo mv /tmp/geminiclaw.service ${svcPath}`);
+        fs.writeFileSync('/tmp/clawgate.service', service);
+        execSync(`sudo mv /tmp/clawgate.service ${svcPath}`);
         execSync('sudo systemctl daemon-reload');
-        execSync(`sudo systemctl enable --now geminiclaw@${user}.service`);
+        execSync(`sudo systemctl enable --now clawgate@${user}.service`);
         console.log('✅ Daemon systemd installé et démarré');
         console.log(`📋 Commandes utiles :`);
-        console.log(`   sudo systemctl status geminiclaw@${user}`);
-        console.log(`   journalctl -u geminiclaw@${user} -f`);
+        console.log(`   sudo systemctl status clawgate@${user}`);
+        console.log(`   journalctl -u clawgate@${user} -f`);
     } catch (err: any) {
         console.error('❌ Échec de l\'installation du daemon (sudo requis) :', err.message);
     }

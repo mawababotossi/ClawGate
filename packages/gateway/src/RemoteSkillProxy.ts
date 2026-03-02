@@ -1,5 +1,5 @@
 import type { WebSocket } from 'ws';
-import type { Skill } from '@geminiclaw/skills';
+import type { Skill } from '@clawgate/skills';
 
 export interface NodeRequest {
     jsonrpc: '2.0';

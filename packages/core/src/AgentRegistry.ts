@@ -1,11 +1,11 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/core — Registry of all configured AgentRuntime instances
+ * @clawgate/core — Registry of all configured AgentRuntime instances
  */
-import { TranscriptStore } from '@geminiclaw/memory';
+import { TranscriptStore } from '@clawgate/memory';
 import { AgentRuntime } from './AgentRuntime.js';
 import type { AgentConfig } from './types.js';
-import type { SkillRegistry } from '@geminiclaw/skills';
+import type { SkillRegistry } from '@clawgate/skills';
 import fs from 'node:fs';
 import path from 'node:path';
 import { validateAgentName, assertWithinBaseDir } from './utils/validation.js';

@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/gateway — MessageQueue
+ * @clawgate/gateway — MessageQueue
  *
  * Per-session FIFO queue to prevent concurrent processing of messages
  * from the same session (avoids context corruption).
  */
-import type { InboundMessage, AgentResponse } from '@geminiclaw/memory';
-import type { AgentRuntime } from '@geminiclaw/core';
+import type { InboundMessage, AgentResponse } from '@clawgate/memory';
+import type { AgentRuntime } from '@clawgate/core';
 
 type Resolver = (value: AgentResponse) => void;
 type Rejecter = (reason: unknown) => void;

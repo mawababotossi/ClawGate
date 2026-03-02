@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/skills — SkillMdLoader
+ * @clawgate/skills — SkillMdLoader
  * 
  * Ported from OpenClaw's logic to handle prompt-driven skills (SKILL.md).
  */

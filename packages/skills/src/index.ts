@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/skills
+ * @clawgate/skills
  */
 export * from './types.js';
 export * from './SkillRegistry.js';

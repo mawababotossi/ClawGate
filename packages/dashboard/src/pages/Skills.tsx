@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * GeminiClaw Dashboard — Skills Page (Refonte v2 — Flat & Aligned Edition)
+ * ClawGate Dashboard — Skills Page (Refonte v2 — Flat & Aligned Edition)
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';

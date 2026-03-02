@@ -2,14 +2,14 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export async function updateAgentsConfig(primaryModel: string) {
-    const configPath = path.resolve(process.cwd(), '../../config/geminiclaw.json');
+    const configPath = path.resolve(process.cwd(), '../../config/clawgate.json');
 
     let content = '';
     try {
         content = await fs.readFile(configPath, 'utf8');
     } catch (err: any) {
         if (err.code === 'ENOENT') {
-            console.warn(`Could not find config/geminiclaw.json at ${configPath}`);
+            console.warn(`Could not find config/clawgate.json at ${configPath}`);
             return;
         }
         throw err;

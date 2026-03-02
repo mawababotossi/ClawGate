@@ -1,8 +1,8 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/core — AgentConfig schema
+ * @clawgate/core — AgentConfig schema
  */
-import { InboundMessage, AgentResponse, OutboundAttachment } from '@geminiclaw/memory';
+import { InboundMessage, AgentResponse, OutboundAttachment } from '@clawgate/memory';
 
 export type ACPProvider =
     | 'gemini'        // gemini --experimental-acp (default)

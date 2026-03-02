@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/core — AgentRuntime
+ * @clawgate/core — AgentRuntime
  *
  * Uses ACPBridge to spawn gemini-cli in the background.
  */
-import { InboundMessage, AgentResponse, OutboundAttachment } from '@geminiclaw/memory';
-import { TranscriptStore } from '@geminiclaw/memory';
-import type { SkillRegistry } from '@geminiclaw/skills';
+import { InboundMessage, AgentResponse, OutboundAttachment } from '@clawgate/memory';
+import { TranscriptStore } from '@clawgate/memory';
+import type { SkillRegistry } from '@clawgate/skills';
 import type { AgentConfig } from './types.js';
 import { ACPBridge } from './ACPBridge.js';
 import { EventEmitter } from 'node:events';
@@ -181,7 +181,7 @@ export class AgentRuntime extends EventEmitter {
         if (provider === 'claude-code') {
             isolationHeader = `
 <identity_isolation>
-CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
+CRITICAL: You are an autonomous agent running within the ClawGate platform.
 1. Your identity is strictly defined by the <agent_soul> and <agent_instructions> files below.
 2. **IMPORTANT**: The XML tags below contain the **current content** of your core memory files.
 3. **DO NOT** use tools to read these files again in this turn.
@@ -192,7 +192,7 @@ CRITICAL: You are an autonomous agent running within the GeminiClaw platform.
             // Provider Gemini (et autres) : header original avec neutralisation Antigravity
             isolationHeader = `
 <identity_isolation>
-CRITICAL: You are an autonomous agent running within the GeminiClaw platform. 
+CRITICAL: You are an autonomous agent running within the ClawGate platform. 
 1. Your identity is strictly defined by the <agent_soul> and <agent_instructions> files below.
 2. **IMPORTANT**: The XML tags below (\`<agent_soul>\`, \`<user_context>\`, \`<agent_instructions>\`, \`<agent_memory>\`) contain the **current content** of your core memory files. 
 3. **DO NOT** use tools to read these files again in this turn. Use the content provided below directly.

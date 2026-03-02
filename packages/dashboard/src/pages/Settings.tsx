@@ -119,7 +119,7 @@ export function Settings() {
                             name="name"
                             value={config.project.name}
                             onChange={handleProjectChange}
-                            placeholder="GeminiClaw"
+                            placeholder="ClawGate"
                         />
                     </div>
                     <div className="form-group">

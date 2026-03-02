@@ -1,18 +1,16 @@
 {
-    "name": "@geminiclaw/channel-discord",
+    "name": "@clawgate/channel-discord",
     "version": "0.1.0",
     "type": "module",
-    "main": "dist/index.js",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "dev": "tsc -w"
-    },
-    "dependencies": {
-        "discord.js": "^14.14.1"
+        "clean": "rm -rf dist"
     },
     "peerDependencies": {
-        "@geminiclaw/core": "workspace:*",
-        "@geminiclaw/memory": "workspace:*"
+        "@clawgate/core": "workspace:*",
+        "@clawgate/memory": "workspace:*"
     },
     "license": "Apache-2.0"
 }

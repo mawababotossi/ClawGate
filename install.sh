@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # @license Apache-2.0
-# GeminiClaw — Installation Script
+# ClawGate — Installation Script
 set -euo pipefail
 
-INSTALL_DIR="${GEMINICLAW_HOME:-$HOME/.geminiclaw}"
-BIN_PATH="/usr/local/bin/geminiclaw"
+INSTALL_DIR="${CLAWGATE_HOME:-$HOME/.clawgate}"
+BIN_PATH="/usr/local/bin/clawgate"
 
-echo "📦 Installing GeminiClaw into $INSTALL_DIR..."
+echo "📦 Installing ClawGate into $INSTALL_DIR..."
 
 # Dependency checks
 command -v node >/dev/null 2>&1 || { echo '❌ Node.js required (v20+)'; exit 1; }
@@ -21,7 +21,7 @@ if [ -d "$INSTALL_DIR/.git" ]; then
   git -C "$INSTALL_DIR" pull --ff-only
 else
   echo "🚚 Cloning repository..."
-  git clone https://github.com/mawababotossi/gemini-claw.git "$INSTALL_DIR"
+  git clone https://github.com/mawababotossi/claw-gate.git "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
@@ -40,5 +40,5 @@ if [ ! -f "$BIN_PATH" ]; then
 fi
 
 echo ""
-echo "✅ GeminiClaw installed successfully!"
-echo "💡 Run the configuration wizard: geminiclaw onboard"
+echo "✅ ClawGate installed successfully!"
+echo "💡 Run the configuration wizard: clawgate onboard"

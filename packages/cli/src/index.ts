@@ -12,8 +12,8 @@ import { gatewayCommand } from './commands/gateway.js';
 const program = new Command();
 
 program
-    .name('geminiclaw')
-    .description('CLI to manage the GeminiClaw server and configuration')
+    .name('clawgate')
+    .description('CLI to manage the ClawGate server and configuration')
     .version('0.1.0');
 
 program.addCommand(configureCommand);

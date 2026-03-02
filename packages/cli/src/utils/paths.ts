@@ -1,12 +1,12 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — CLI Path Utilities
+ * ClawGate — CLI Path Utilities
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Returns the absolute path to the GeminiClaw root directory.
+ * Returns the absolute path to the ClawGate root directory.
  * Derived from the location of the CLI source/dist files.
  */
 export function getRootDir(): string {
@@ -20,7 +20,7 @@ export function getRootDir(): string {
     // Let's use a more robust check: look for 'packages' and 'config'
     let current = dirname;
     while (current !== '/' && current !== path.parse(current).root) {
-        if (path.basename(current) === '.geminiclaw') return current; // For global install
+        if (path.basename(current) === '.clawgate') return current; // For global install
         if (requireExists(path.join(current, 'packages')) && requireExists(path.join(current, 'config'))) {
             return current;
         }
@@ -57,8 +57,8 @@ export function getRootDirSync(): string {
         current = parent;
     }
 
-    // Final fallback: check for .geminiclaw in home
-    const homeGClaw = path.join(process.env['HOME'] || '', '.geminiclaw');
+    // Final fallback: check for .clawgate in home
+    const homeGClaw = path.join(process.env['HOME'] || '', '.clawgate');
     if (fs.existsSync(homeGClaw)) return homeGClaw;
 
     return process.cwd();

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/channel-discord — DiscordAdapter
+ * @clawgate/channel-discord — DiscordAdapter
  */
 import { Client, GatewayIntentBits, Partials, TextChannel, Message } from 'discord.js';
-import type { IGateway } from '@geminiclaw/core';
-import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
+import type { IGateway } from '@clawgate/core';
+import type { Attachment, OutboundAttachment } from '@clawgate/memory';
 
 const CHANNEL = 'discord';
 

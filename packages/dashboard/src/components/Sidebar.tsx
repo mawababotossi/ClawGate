@@ -62,7 +62,7 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
         <aside className="sidebar glass-panel">
             <div className="sidebar-header">
                 <div className="logo-glow"></div>
-                <h2>GeminiClaw</h2>
+                <h2>ClawGate</h2>
                 <span className="badge">v0.1.0</span>
             </div>
 

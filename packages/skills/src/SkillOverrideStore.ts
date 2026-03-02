@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/skills — SkillOverrideStore
+ * @clawgate/skills — SkillOverrideStore
  * Persists manual skill disablement to a JSON file.
  */
 import fs from 'node:fs';

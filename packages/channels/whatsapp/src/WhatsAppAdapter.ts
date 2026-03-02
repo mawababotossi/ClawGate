@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/channel-whatsapp — WhatsAppAdapter (Baileys v6)
+ * @clawgate/channel-whatsapp — WhatsAppAdapter (Baileys v6)
  *
  * QR code based pairing. After first login, auth is cached in data/whatsapp_auth.
  * Reconnects automatically if disconnected.
@@ -11,8 +11,8 @@ type BaileysModule = any;
 
 import { join } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
-import type { IGateway } from '@geminiclaw/core';
-import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
+import type { IGateway } from '@clawgate/core';
+import type { Attachment, OutboundAttachment } from '@clawgate/memory';
 
 const CHANNEL = 'whatsapp';
 const AUTH_DIR = join(process.cwd(), 'data', 'whatsapp_auth');
@@ -192,7 +192,7 @@ export class WhatsAppAdapter {
             printQRInTerminal: true,
             syncFullHistory: false,
             logger: { level: 'silent', trace: () => { }, debug: () => { }, info: () => { }, warn: () => { }, error: () => { }, fatal: () => { }, child: () => ({ level: 'silent', trace: () => { }, debug: () => { }, info: () => { }, warn: () => { }, error: () => { }, fatal: () => { }, child: () => ({}) }) },
-            browser: ['GeminiClaw', 'Chrome', '1.0.0'],
+            browser: ['ClawGate', 'Chrome', '1.0.0'],
             markOnlineOnConnect: true,
             shouldIgnoreJid: () => false,
             // getMessage is CRITICAL for message retry/decryption.

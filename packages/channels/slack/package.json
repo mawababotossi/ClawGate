@@ -1,23 +1,23 @@
 {
-    "name": "@geminiclaw/channel-slack",
+    "name": "@clawgate/channel-slack",
     "version": "0.1.0",
     "type": "module",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "dev": "tsc -w"
+        "clean": "rm -rf dist"
     },
     "dependencies": {
         "@slack/bolt": "^3.16.0"
     },
     "peerDependencies": {
-        "@geminiclaw/core": "workspace:*",
-        "@geminiclaw/memory": "workspace:*"
+        "@clawgate/core": "workspace:*",
+        "@clawgate/memory": "workspace:*"
     },
     "devDependencies": {
-        "@geminiclaw/core": "workspace:*",
-        "@geminiclaw/memory": "workspace:*",
+        "@clawgate/core": "workspace:*",
+        "@clawgate/memory": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^5.5.0"
     },

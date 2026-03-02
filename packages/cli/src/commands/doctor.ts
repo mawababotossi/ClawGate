@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — Doctor Command
+ * ClawGate — Doctor Command
  */
 import { Command } from 'commander';
 import fs from 'node:fs';
@@ -10,7 +10,7 @@ import { execSync } from 'node:child_process';
 export const doctorCommand = new Command('doctor')
     .description('Check system health and environment configuration')
     .action(async () => {
-        console.log('🩺 GeminiClaw Doctor — Diagnostic system\n');
+        console.log('🩺 ClawGate Doctor — Diagnostic system\n');
 
         const checks = [
             { name: 'Node.js version', fn: checkNode },
@@ -39,9 +39,9 @@ export const doctorCommand = new Command('doctor')
         }
 
         if (errors === 0) {
-            console.log('\n✨ Everything looks great! Your GeminiClaw instance is healthy.');
+            console.log('\n✨ Everything looks great! Your ClawGate instance is healthy.');
         } else {
-            console.log(`\n⚠️  Found ${errors} issue(s). Please fix them before running GeminiClaw.`);
+            console.log(`\n⚠️  Found ${errors} issue(s). Please fix them before running ClawGate.`);
         }
     });
 
@@ -82,13 +82,13 @@ async function checkEnv() {
 }
 
 async function checkConfig() {
-    const configPath = path.resolve(process.cwd(), '../../config/geminiclaw.json');
-    if (!fs.existsSync(configPath)) return 'config/geminiclaw.json missing.';
+    const configPath = path.resolve(process.cwd(), '../../config/clawgate.json');
+    if (!fs.existsSync(configPath)) return 'config/clawgate.json missing.';
     try {
         JSON.parse(fs.readFileSync(configPath, 'utf8'));
         return true;
     } catch {
-        return 'config/geminiclaw.json is not valid JSON.';
+        return 'config/clawgate.json is not valid JSON.';
     }
 }
 

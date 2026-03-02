@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/gateway — Gateway
+ * @clawgate/gateway — Gateway
  *
  * Central hub. Channel adapters call `ingest()` to submit messages.
  * The Gateway resolves the session, checks ACL, queues the message,
@@ -12,11 +12,11 @@ import type {
     Session,
     ChatMessage,
     OutboundAttachment,
-} from '@geminiclaw/memory';
-import { SessionStore, TranscriptStore } from '@geminiclaw/memory';
-import { AgentRegistry } from '@geminiclaw/core';
-import type { AgentConfig, IGateway, ActivityType, ProjectConfig, ProviderConfig } from '@geminiclaw/core';
-import { SkillMcpServer, SkillRegistry, type Skill } from '@geminiclaw/skills';
+} from '@clawgate/memory';
+import { SessionStore, TranscriptStore } from '@clawgate/memory';
+import { AgentRegistry } from '@clawgate/core';
+import type { AgentConfig, IGateway, ActivityType, ProjectConfig, ProviderConfig } from '@clawgate/core';
+import { SkillMcpServer, SkillRegistry, type Skill } from '@clawgate/skills';
 import { Type } from '@google/genai';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,17 +64,17 @@ export class Gateway implements IGateway {
         const apiPort = config.gatewayPort ?? 3002;
         const localMcpUrl = `http://localhost:${apiPort}/api/mcp/messages`;
         const makeMcpServerEntry = () => ({
-            name: 'geminiclaw-skills',
+            name: 'clawgate-skills',
             type: 'sse',
             url: localMcpUrl,
             headers: [] as { name: string; value: string }[]
         });
 
         const agents = (config.agents as AgentConfig[]).map(agent => {
-            // Start with a clean list, excluding any existing 'geminiclaw-skills' entries
+            // Start with a clean list, excluding any existing 'clawgate-skills' entries
             // or entries with the same URL, to ensure we only have our correctly formatted one.
             const otherServers = (agent.mcpServers || []).filter(s =>
-                s.name !== 'geminiclaw-skills' && s.url !== localMcpUrl
+                s.name !== 'clawgate-skills' && s.url !== localMcpUrl
             );
 
             // Ensure all remaining servers have a 'headers' field in the correct [{name, value}] format
@@ -815,7 +815,7 @@ export class Gateway implements IGateway {
     private async saveConfig(): Promise<void> {
         // We need to rebuild the full config to save it
         // This is a bit simplified, we assume the original config path is available
-        const configPath = process.env['CONFIG_PATH'] ?? './config/geminiclaw.json';
+        const configPath = process.env['CONFIG_PATH'] ?? './config/clawgate.json';
         const absPath = resolve(configPath);
 
         const newConfigs = this.registry.listConfigs();
@@ -1007,7 +1007,7 @@ export class Gateway implements IGateway {
         }
 
         // Persist to .env
-        const { overwriteEnvVariables } = await import('@geminiclaw/core');
+        const { overwriteEnvVariables } = await import('@clawgate/core');
         await overwriteEnvVariables(envVars || {});
 
         // Refresh cache

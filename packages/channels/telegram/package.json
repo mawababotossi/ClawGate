@@ -1,5 +1,5 @@
 {
-    "name": "@geminiclaw/channel-telegram",
+    "name": "@clawgate/channel-telegram",
     "version": "0.1.0",
     "description": "Telegram channel adapter via Telegraf",
     "type": "module",
@@ -11,8 +11,8 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@geminiclaw/core": "workspace:*",
-        "@geminiclaw/memory": "workspace:*",
+        "@clawgate/core": "workspace:*",
+        "@clawgate/memory": "workspace:*",
         "telegraf": "^4.16.3"
     },
     "devDependencies": {

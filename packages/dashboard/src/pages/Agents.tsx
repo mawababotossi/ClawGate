@@ -421,7 +421,7 @@ function ToolsTab({ agent }: { agent: AgentConfig }) {
 
     return (
         <div className="tab-content animate-fade-in">
-            <SectionTitle>MCP Tool Access — geminiclaw-skills</SectionTitle>
+            <SectionTitle>MCP Tool Access — clawgate-skills</SectionTitle>
             <p className="text-sm text-muted mb-4">
                 Tool access is controlled by <strong>Allowed Permissions</strong> in the Overview tab.
             </p>

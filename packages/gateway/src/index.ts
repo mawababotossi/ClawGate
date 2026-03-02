@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/gateway — Public API
+ * @clawgate/gateway — Public API
  */
 export * from './types.js';
 export { Gateway } from './Gateway.js';

@@ -4,9 +4,9 @@ import { overwriteEnvVariables } from '../utils/env.js';
 import { updateAgentsConfig } from '../utils/config.js';
 
 export const configureCommand = new Command('configure')
-    .description('Interactive configuration guide for GeminiClaw providers, models, and API keys')
+    .description('Interactive configuration guide for ClawGate providers, models, and API keys')
     .action(async () => {
-        console.log('🤖 Welcome to the GeminiClaw Configuration Wizard! 🤖\n');
+        console.log('🤖 Welcome to the ClawGate Configuration Wizard! 🤖\n');
 
         const configQuestions = [
             {
@@ -72,7 +72,7 @@ export const configureCommand = new Command('configure')
             console.log('✅ Environment variables updated (.env)');
         }
 
-        // 2. Update config/geminiclaw.json
+        // 2. Update config/clawgate.json
         let primaryModel = answers.geminiModel;
         if (answers.primaryProvider === 'OpenClaw (OpenRouter/Ollama/Together)') {
             primaryModel = answers.openClawModel;
@@ -80,8 +80,8 @@ export const configureCommand = new Command('configure')
 
         if (primaryModel) {
             await updateAgentsConfig(primaryModel);
-            console.log(`✅ Default agent model set to ${primaryModel} in config/geminiclaw.json`);
+            console.log(`✅ Default agent model set to ${primaryModel} in config/clawgate.json`);
         }
 
-        console.log('\n🎉 Configuration complete! Run `geminiclaw start` to boot your agents.');
+        console.log('\n🎉 Configuration complete! Run `clawgate start` to boot your agents.');
     });

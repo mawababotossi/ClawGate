@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/core — StreamingBuffer
+ * @clawgate/core — StreamingBuffer
  * 
  * Regroupe les chunks de texte et les envoie par rafales pour éviter
  * le rate limiting des services de messagerie (WhatsApp).

@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/channel-webchat — WebSocket chat adapter
+ * @clawgate/channel-webchat — WebSocket chat adapter
  *
  * Exposes a simple WebSocket server. Each browser tab gets its own
  * peerId (based on a generated client ID stored in localStorage).
@@ -9,8 +9,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'node:http';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { IGateway } from '@geminiclaw/core';
-import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
+import type { IGateway } from '@clawgate/core';
+import type { Attachment, OutboundAttachment } from '@clawgate/memory';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CHANNEL = 'webchat';

@@ -1,10 +1,10 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/channel-slack — SlackAdapter
+ * @clawgate/channel-slack — SlackAdapter
  */
 import { App } from '@slack/bolt';
-import type { IGateway } from '@geminiclaw/core';
-import type { Attachment, OutboundAttachment } from '@geminiclaw/memory';
+import type { IGateway } from '@clawgate/core';
+import type { Attachment, OutboundAttachment } from '@clawgate/memory';
 
 const CHANNEL = 'slack';
 

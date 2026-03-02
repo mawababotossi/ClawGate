@@ -1,5 +1,5 @@
 {
-    "name": "@geminiclaw/gateway",
+    "name": "@clawgate/gateway",
     "version": "0.1.0",
     "description": "Hub-and-spoke gateway — WebSocket routing, sessions, queue, cron, webhooks",
     "type": "module",
@@ -7,17 +7,17 @@
     "types": "./dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "dev": "CONFIG_PATH=../../config/geminiclaw.json tsx watch --env-file ../../.env src/server.ts",
+        "dev": "CONFIG_PATH=../../config/clawgate.json tsx watch --env-file ../../.env src/server.ts",
         "start": "node dist/index.js",
         "clean": "rm -rf dist",
         "test": "vitest run"
     },
     "dependencies": {
-        "@geminiclaw/channel-telegram": "workspace:*",
-        "@geminiclaw/channel-whatsapp": "workspace:*",
-        "@geminiclaw/core": "workspace:*",
-        "@geminiclaw/memory": "workspace:*",
-        "@geminiclaw/skills": "workspace:*",
+        "@clawgate/channel-telegram": "workspace:*",
+        "@clawgate/channel-whatsapp": "workspace:*",
+        "@clawgate/core": "workspace:*",
+        "@clawgate/memory": "workspace:*",
+        "@clawgate/skills": "workspace:*",
         "cookie-parser": "^1.4.7",
         "dotenv": "^16.4.0",
         "express": "^4.19.0",

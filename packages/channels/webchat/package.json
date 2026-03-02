@@ -1,5 +1,5 @@
 {
-    "name": "@geminiclaw/channel-webchat",
+    "name": "@clawgate/channel-webchat",
     "version": "0.1.0",
     "description": "WebChat channel adapter — WebSocket + HTML UI",
     "type": "module",
@@ -11,8 +11,8 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@geminiclaw/gateway": "workspace:*",
-        "@geminiclaw/memory": "workspace:*",
+        "@clawgate/gateway": "workspace:*",
+        "@clawgate/memory": "workspace:*",
         "ws": "^8.18.0"
     },
     "devDependencies": {

@@ -35,7 +35,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="login-card">
                 <div className="login-header">
                     <div className="login-logo">🦾</div>
-                    <h1>GeminiClaw</h1>
+                    <h1>ClawGate</h1>
                     <p>Enter your API token to access the dashboard</p>
                 </div>
 

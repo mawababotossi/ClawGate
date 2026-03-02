@@ -52,7 +52,7 @@ function UpdateBanner({ onDismiss }: { onDismiss: () => void }) {
                     <strong>Update available:</strong> {LATEST_VERSION} (running {CURRENT_VERSION}).
                 </span>
                 <a
-                    href="https://github.com/mawababotossi/gemini-claw/releases"
+                    href="https://github.com/mawababotossi/claw-gate/releases"
                     target="_blank"
                     rel="noreferrer"
                     className="update-banner-link"

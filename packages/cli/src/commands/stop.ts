@@ -4,13 +4,13 @@ import fs from 'node:fs';
 import { getRootDirSync } from '../utils/paths.js';
 
 export const stopCommand = new Command('stop')
-    .description('Stop the GeminiClaw Gateway and Dashboard services')
+    .description('Stop the ClawGate Gateway and Dashboard services')
     .action(async () => {
         const rootDir = getRootDirSync();
         const gatewayDir = path.join(rootDir, 'packages', 'gateway');
         const dashboardDir = path.join(rootDir, 'packages', 'dashboard');
 
-        console.log('🛑 Stopping GeminiClaw services...');
+        console.log('🛑 Stopping ClawGate services...');
 
         const killProcess = (pid: number, name: string) => {
             try {

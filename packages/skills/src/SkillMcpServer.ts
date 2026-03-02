@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/skills — SkillMcpServer
+ * @clawgate/skills — SkillMcpServer
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -106,7 +106,7 @@ export class SkillMcpServer {
         const transport = new SSEServerTransport('/api/mcp/messages', res);
 
         const server = new Server({
-            name: 'geminiclaw-skills',
+            name: 'clawgate-skills',
             version: '1.0.0'
         }, {
             capabilities: { tools: {} }

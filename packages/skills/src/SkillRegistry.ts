@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/skills — SkillRegistry
+ * @clawgate/skills — SkillRegistry
  */
 import type { FunctionDeclaration } from '@google/genai';
 import type { Skill } from './types.js';

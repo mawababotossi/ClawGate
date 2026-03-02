@@ -1,4 +1,4 @@
-import type { AgentConfig, ProjectConfig, ProviderConfig } from '@geminiclaw/core';
+import type { AgentConfig, ProjectConfig, ProviderConfig } from '@clawgate/core';
 
 export interface ChannelConfig {
     enabled: boolean;

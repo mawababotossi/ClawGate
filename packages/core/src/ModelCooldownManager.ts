@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * GeminiClaw — Model Cooldown Manager
+ * ClawGate — Model Cooldown Manager
  */
 
 const COOLDOWN_STEPS_MS = [

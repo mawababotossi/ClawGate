@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/memory — Public API
+ * @clawgate/memory — Public API
  */
 export * from './types.js';
 export { SessionStore } from './SessionStore.js';

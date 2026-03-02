@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/memory — JSONL transcript store (OpenClaw-compatible format)
+ * @clawgate/memory — JSONL transcript store (OpenClaw-compatible format)
  */
 import {
     appendFileSync,

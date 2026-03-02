@@ -1,6 +1,6 @@
 /**
  * @license Apache-2.0
- * @geminiclaw/core — Public API
+ * @clawgate/core — Public API
  */
 export * from './types.js';
 export { AgentRuntime } from './AgentRuntime.js';
