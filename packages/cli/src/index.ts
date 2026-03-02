@@ -7,6 +7,7 @@ import { onboardCommand } from './commands/onboard.js';
 import { doctorCommand } from './commands/doctor.js';
 import { statusCommand } from './commands/status.js';
 import { auditCommand } from './commands/audit.js';
+import { gatewayCommand } from './commands/gateway.js';
 
 const program = new Command();
 
@@ -22,6 +23,7 @@ program.addCommand(onboardCommand);
 program.addCommand(doctorCommand);
 program.addCommand(statusCommand);
 program.addCommand(auditCommand);
+program.addCommand(gatewayCommand);
 
 // Fallback to help
 if (process.argv.length === 2) {

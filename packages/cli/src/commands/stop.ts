@@ -1,11 +1,12 @@
 import { Command } from 'commander';
 import path from 'node:path';
 import fs from 'node:fs';
+import { getRootDirSync } from '../utils/paths.js';
 
 export const stopCommand = new Command('stop')
     .description('Stop the GeminiClaw Gateway and Dashboard services')
     .action(async () => {
-        const rootDir = path.resolve(process.cwd());
+        const rootDir = getRootDirSync();
         const gatewayDir = path.join(rootDir, 'packages', 'gateway');
         const dashboardDir = path.join(rootDir, 'packages', 'dashboard');
 

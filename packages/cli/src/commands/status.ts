@@ -6,6 +6,7 @@ import { Command } from 'commander';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { getRootDirSync } from '../utils/paths.js';
 
 export const statusCommand = new Command('status')
     .description('Monitor running GeminiClaw processes')
@@ -18,7 +19,7 @@ export const statusCommand = new Command('status')
             { name: 'Dashboard', dir: 'packages/dashboard', pid: 'dashboard.pid' },
         ];
 
-        const rootDir = path.resolve(process.cwd(), '../../');
+        const rootDir = getRootDirSync();
 
         for (const svc of services) {
             const pidPath = path.join(rootDir, svc.dir, svc.pid);

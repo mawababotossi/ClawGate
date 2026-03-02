@@ -1,6 +1,7 @@
 {
   "name": "@geminiclaw/cli",
   "version": "0.1.0",
+  "type": "module",
   "description": "Configuration CLI for GeminiClaw",
   "main": "dist/index.js",
   "bin": {
