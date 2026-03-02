@@ -25,6 +25,9 @@ export interface SkillManifest {
     manuallyDisabled?: boolean;
     // UI
     icon?: string;
+    // For prompt skills
+    install?: any;
+    homepage?: string;
 }
 
 export interface Skill {

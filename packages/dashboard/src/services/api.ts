@@ -78,6 +78,20 @@ export interface SkillManifest {
     manuallyDisabled?: boolean;
     assignedAgents?: string[];
     icon?: string;
+    install?: InstallStep[];
+    homepage?: string;
+}
+
+export interface InstallStep {
+    id?: string;
+    kind: string;
+    formula?: string;    // brew
+    package?: string;    // apt, uv, node (fallback)
+    module?: string;     // go, node (prioritaire)
+    command?: string;    // shell
+    label?: string;
+    bins?: string[];
+    os?: string[];
 }
 
 export const api = {

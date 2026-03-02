@@ -123,7 +123,9 @@ export class SkillRegistry {
                 missingEnv: s.missingEnv,
                 missingBins: s.missingBins,
                 reason: s.reason,
-                manuallyDisabled: this.skillOverrideStore?.isDisabled(s.name)
+                manuallyDisabled: this.skillOverrideStore?.isDisabled(s.name),
+                install: s.install,
+                homepage: s.homepage
             });
         }
 

@@ -29,6 +29,7 @@ export interface SkillMd {
     requiredEnv: SkillMdEnvVar[];
     missingEnv: string[];
     missingBins: string[];
+    homepage?: string;
 }
 
 export class SkillMdLoader {
@@ -80,6 +81,7 @@ export class SkillMdLoader {
                                     })),
                                     missingEnv: [],
                                     missingBins: [],
+                                    homepage: data.metadata?.openclaw?.homepage,
                                 });
                             }
                         } catch (err) {
