@@ -98,33 +98,35 @@ export class AgentRuntime extends EventEmitter {
             const agentSkills = (this.config.skills || []).join(',');
 
             const acpMcpServers = (this.config.mcpServers || []).map(s => {
-                if (s.url && s.url.includes('/api/mcp/messages')) {
-                    // Convert existing headers to tuple array if needed
-                    const existingHeaders: [string, string][] = Array.isArray(s.headers)
-                        ? s.headers.filter((h: any) => Array.isArray(h) && h.length === 2)
-                        : Object.entries(s.headers ?? {});
-
-                    // Filter duplicates
-                    const filteredHeaders = existingHeaders.filter(([key]) =>
-                        key !== 'x-agent-name' && key !== 'x-agent-skills'
-                    );
-
-                    return {
-                        ...s,
-                        headers: [
-                            ...filteredHeaders,
-                            ['x-agent-name', agentName],
-                            ['x-agent-skills', agentSkills],
-                        ] as [string, string][]
-                    };
+                // Normalize existing headers to a flat object first
+                const headerMap: Record<string, string> = {};
+                if (Array.isArray(s.headers)) {
+                    s.headers.forEach((h: any) => {
+                        if (Array.isArray(h) && h.length === 2) {
+                            headerMap[h[0]] = h[1];
+                        } else if (h && typeof h === 'object' && h.name && h.value) {
+                            headerMap[h.name] = h.value;
+                        }
+                    });
+                } else if (s.headers && typeof s.headers === 'object') {
+                    Object.assign(headerMap, s.headers);
                 }
 
-                // Ensure other servers also use the tuple array format
+                // Inject our custom headers if it's the internal skill server
+                if (s.url && s.url.includes('/api/mcp/messages')) {
+                    headerMap['x-agent-name'] = agentName;
+                    headerMap['x-agent-skills'] = agentSkills;
+                }
+
+                // Final conversion to [{ name, value }, ...]
+                const finalHeaders = Object.entries(headerMap).map(([name, value]) => ({
+                    name,
+                    value: String(value)
+                }));
+
                 return {
                     ...s,
-                    headers: Array.isArray(s.headers)
-                        ? s.headers
-                        : Object.entries(s.headers ?? {})
+                    headers: finalHeaders
                 };
             });
 

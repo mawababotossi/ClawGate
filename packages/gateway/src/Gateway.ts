@@ -62,7 +62,7 @@ export class Gateway implements IGateway {
             name: 'geminiclaw-skills',
             type: 'sse',
             url: localMcpUrl,
-            headers: [] as [string, string][]
+            headers: [] as { name: string; value: string }[]
         });
 
         const agents = (config.agents as AgentConfig[]).map(agent => {
@@ -72,13 +72,27 @@ export class Gateway implements IGateway {
                 s.name !== 'geminiclaw-skills' && s.url !== localMcpUrl
             );
 
-            // Ensure all remaining servers have a 'headers' field in the correct [string, string][] format
+            // Ensure all remaining servers have a 'headers' field in the correct [{name, value}] format
             const mcpServers = [
                 makeMcpServerEntry(),
-                ...otherServers.map(s => ({
-                    ...s,
-                    headers: Array.isArray(s.headers) ? s.headers : Object.entries(s.headers ?? {})
-                }))
+                ...otherServers.map(s => {
+                    const headerMap: Record<string, string> = {};
+                    if (Array.isArray(s.headers)) {
+                        s.headers.forEach((h: any) => {
+                            if (Array.isArray(h) && h.length === 2) {
+                                headerMap[h[0]] = h[1];
+                            } else if (h && typeof h === 'object' && h.name && h.value) {
+                                headerMap[h.name] = h.value;
+                            }
+                        });
+                    } else if (s.headers && typeof s.headers === 'object') {
+                        Object.assign(headerMap, s.headers);
+                    }
+                    return {
+                        ...s,
+                        headers: Object.entries(headerMap).map(([name, value]) => ({ name, value: String(value) }))
+                    };
+                })
             ];
 
             return {
