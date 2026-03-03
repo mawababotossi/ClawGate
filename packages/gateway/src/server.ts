@@ -78,8 +78,11 @@ console.trace = (...args) => broadcastLog('trace', ...args);
 // ------------------------
 
 const defaultPath = path.join(rootDir, 'config/clawgate.json');
+// If CONFIG_PATH is set explicitly, resolve it from cwd (preserves relative paths
+// like '../../config/clawgate.json' used in dev scripts and PM2 environments).
+// If not set, use the rootDir-relative default (works for fresh installs).
 const configPath = process.env['CONFIG_PATH']
-    ? path.resolve(rootDir, process.env['CONFIG_PATH'])
+    ? path.resolve(process.cwd(), process.env['CONFIG_PATH'])
     : defaultPath;
 
 async function main(): Promise<void> {
