@@ -18,8 +18,10 @@ export function loadEnv(): void {
     // Search up to 10 levels deep for the project root (containing packages/ or .env)
     for (let i = 0; i < 10; i++) {
         const potentialEnv = path.join(current, '.env');
+        console.log(`[env] Checking: ${potentialEnv}`);
         if (fs.existsSync(potentialEnv)) {
             envPath = potentialEnv;
+            console.log(`[env] Found .env at: ${envPath}`);
             break;
         }
 
