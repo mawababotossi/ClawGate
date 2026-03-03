@@ -415,6 +415,7 @@ function FilesTab({ agentName, memory }: { agentName: string; memory: any[] }) {
     const [fileContent, setFileContent] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     useEffect(() => {
         if (memory.length > 0 && !activeFile) {
@@ -443,8 +444,11 @@ function FilesTab({ agentName, memory }: { agentName: string; memory: any[] }) {
     const handleSave = async () => {
         if (!activeFile) return;
         setIsSaving(true);
+        setSaveSuccess(false);
         try {
             await api.updateAgentMemoryContent(agentName, activeFile, fileContent);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
         } catch (err) {
             alert('Failed to save file');
         } finally {
@@ -503,8 +507,8 @@ function FilesTab({ agentName, memory }: { agentName: string; memory: any[] }) {
                                     {activeFileData?.mtime && ` · modified ${formatTimeAgo(activeFileData.mtime)}`}
                                 </span>
                             </div>
-                            <button className="btn btn-sm btn-outline" onClick={handleSave} disabled={isSaving || isLoading}>
-                                {isSaving ? <Loader2 size={13} className="animate-spin" /> : 'Save'}
+                            <button className={`btn btn-sm ${saveSuccess ? 'btn-primary' : 'btn-outline'} transition-colors flex items-center gap-1.5`} onClick={handleSave} disabled={isSaving || isLoading} style={{ background: saveSuccess ? 'var(--success)' : undefined, color: saveSuccess ? 'white' : undefined, borderColor: saveSuccess ? 'var(--success)' : undefined }}>
+                                {isSaving ? <Loader2 size={13} className="animate-spin" /> : saveSuccess ? <><CheckCircle2 size={13} /> Saved</> : 'Save'}
                             </button>
                         </div>
                         <div className="editor-content-wrapper">
