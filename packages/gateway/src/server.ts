@@ -4,7 +4,8 @@
  *
  * Bootstraps gateway + channels from config/clawgate.json.
  */
-import 'dotenv/config';
+import { loadEnv } from './utils/env.js';
+loadEnv();
 import { Gateway, loadConfig } from './index.js';
 import fs from 'node:fs';
 import os from 'node:os';
