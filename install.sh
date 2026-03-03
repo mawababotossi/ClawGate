@@ -21,7 +21,7 @@ if [ -d "$INSTALL_DIR/.git" ]; then
   git -C "$INSTALL_DIR" pull --ff-only
 else
   echo "🚚 Cloning repository..."
-  git clone https://github.com/mawababotossi/claw-gate.git "$INSTALL_DIR"
+  git clone https://github.com/mawababotossi/ClawGate.git "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
