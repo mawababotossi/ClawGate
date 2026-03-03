@@ -26,7 +26,20 @@ export const statusCommand = new Command('status')
             let status = '🔘 Stopped';
             let info = '';
 
-            if (fs.existsSync(pidPath)) {
+            // Check PM2 first (preferred on server)
+            try {
+                const pm2Name = `clawgate-${svc.name.toLowerCase()}`;
+                const pm2Data = execSync(`pm2 jlist | jq '.[] | select(.name=="${pm2Name}") | .pm2_env.status'`).toString().trim().replace(/"/g, '');
+                if (pm2Data === 'online') {
+                    status = '🟢 Running (PM2)';
+                    const pm2Pid = execSync(`pm2 jlist | jq '.[] | select(.name=="${pm2Name}") | .pid'`).toString().trim();
+                    info = `(PID: ${pm2Pid})`;
+                }
+            } catch {
+                // Ignore if pm2 or jq fails
+            }
+
+            if (status === '🔘 Stopped' && fs.existsSync(pidPath)) {
                 const pid = fs.readFileSync(pidPath, 'utf8').trim();
                 try {
                     // Check if process is alive
