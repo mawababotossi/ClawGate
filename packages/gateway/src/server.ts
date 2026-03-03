@@ -85,6 +85,10 @@ const configPath = process.env['CONFIG_PATH']
     ? path.resolve(process.cwd(), process.env['CONFIG_PATH'])
     : defaultPath;
 
+console.error(`[debug] rootDir: ${rootDir}`);
+console.error(`[debug] configPath: ${configPath}`);
+console.error(`[debug] process.env.DATA_DIR: ${process.env['DATA_DIR']}`);
+
 async function main(): Promise<void> {
     console.log('[clawgate] Starting...');
     const config = loadConfig(configPath);
