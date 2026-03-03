@@ -222,8 +222,8 @@ async function main(): Promise<void> {
             // Set HttpOnly cookie
             res.cookie('gc_session', token, {
                 httpOnly: true,
-                secure: process.env['NODE_ENV'] === 'production',
-                sameSite: 'strict',
+                secure: process.env['NODE_ENV'] === 'production' && (req.secure || req.headers['x-forwarded-proto'] === 'https'),
+                sameSite: 'lax', // Use lax instead of strict to prevent issues if navigating from external links
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
             return res.json({ success: true });
