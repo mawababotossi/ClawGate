@@ -100,7 +100,7 @@ export class AgentRuntime extends EventEmitter {
             }
 
             const agentName = this.config.name;
-            const agentSkills = (this.config.skills || []).join(',');
+            const agentSkills = [...(this.config.skills || []), ...(this.config.allowedPermissions || [])].join(',');
 
             const acpMcpServers = (this.config.mcpServers || []).map(s => {
                 // Normalize existing headers to a flat object first
