@@ -81,6 +81,7 @@
                 "run_shell_command",
                 "network",
                 "read_skill",
+                "read_host_file",
                 "run_code",
                 "getCurrentTime"
             ],
