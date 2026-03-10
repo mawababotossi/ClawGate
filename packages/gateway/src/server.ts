@@ -591,12 +591,21 @@ async function main(): Promise<void> {
             res.status(500).json({ error: err.message });
         }
     });
-    // API: Trigger manual heartbeat
-    app.post('/api/agents/:name/heartbeat', async (req, res) => {
+    // API: Trigger manual heartbeat (fire-and-forget to avoid 504 timeout)
+    app.post('/api/agents/:name/heartbeat', (req, res) => {
+        const agentName = req.params.name;
         try {
-            const runtime = gateway.registry.get(req.params.name);
-            const result = await (runtime as any).triggerManualHeartbeat();
-            res.json(result);
+            const runtime = gateway.registry.get(agentName);
+            if (!runtime) {
+                res.status(404).json({ error: `Agent "${agentName}" not found` });
+                return;
+            }
+            // Reply immediately — the heartbeat session can take 60+ seconds
+            res.status(202).json({ success: true, message: `Heartbeat triggered for ${agentName}. Check logs for results.` });
+            // Run in background
+            (runtime as any).triggerManualHeartbeat().catch((err: any) => {
+                console.error(`[gateway] Manual heartbeat for ${agentName} failed:`, err);
+            });
         } catch (err: any) {
             res.status(500).json({ error: err.message });
         }
