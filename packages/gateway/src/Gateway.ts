@@ -608,7 +608,8 @@ export class Gateway implements IGateway {
         this.skillRegistry.register(removeTaskSkill);
         this.skillRegistry.register(listAgentsSkill);
         this.skillRegistry.register(readSkillSkill);
-        console.log(`[gateway] Registered scheduler, discovery & skill tools: schedule_task, list_tasks, remove_task, list_agents, read_skill`);
+        const declarations = this.skillRegistry.getDeclarations() || [];
+        console.log(`[gateway] Registered builtin skills: ${declarations.map(d => d.name).join(', ')}`);
     }
 
 

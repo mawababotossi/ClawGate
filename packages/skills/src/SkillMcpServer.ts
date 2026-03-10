@@ -41,9 +41,19 @@ export class SkillMcpServer {
 
     private setupHandlers(server: Server) {
         server.setRequestHandler(ListToolsRequestSchema, async (request, extra) => {
-            // Retrieve agentName from SSE headers if available
-            const agentName = (extra as any)?.agentName;
-            const whitelist = (extra as any)?.whitelist as string[] | undefined;
+            // Retrieve agent context from request headers (extra is the IncomingMessage for SSE) or from pre-processed context (for POST)
+            const req = extra as any;
+            let agentName: string | undefined;
+            let whitelist: string[] | undefined;
+
+            if (req.agentContext) { // Context from handleMessage (POST request)
+                agentName = req.agentContext.agentName;
+                whitelist = req.agentContext.whitelist;
+            } else { // Context from SSE (GET request)
+                const whitelistStr = req?.headers?.['x-agent-skills'];
+                whitelist = whitelistStr ? (whitelistStr as string).split(',') : undefined;
+                agentName = req?.headers?.['x-agent-name'] as string | undefined;
+            }
 
             let declarations = this.registry.getDeclarations() || [];
 
@@ -63,7 +73,15 @@ export class SkillMcpServer {
 
         server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
             try {
-                const whitelist = (extra as any)?.whitelist as string[] | undefined;
+                const req = extra as any;
+                let whitelist: string[] | undefined;
+
+                if (req.agentContext) {
+                    whitelist = req.agentContext.whitelist;
+                } else {
+                    const whitelistStr = req?.headers?.['x-agent-skills'];
+                    whitelist = whitelistStr ? (whitelistStr as string).split(',') : undefined;
+                }
 
                 // Security: Verify skill is in whitelist if whitelist exists
                 if (whitelist && whitelist.length > 0 && !whitelist.includes(request.params.name)) {
