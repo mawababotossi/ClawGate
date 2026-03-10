@@ -920,7 +920,7 @@ ${systemPrompt}
                 success: true,
                 message: finalResponse === 'HEARTBEAT_OK'
                     ? 'Heartbeat completed successfully. Agent reported OK status.'
-                    : `Heartbeat completed. Agent response: ${finalResponse.substring(0, 100)}${finalResponse.length > 100 ? '...' : ''}`
+                    : `Heartbeat completed. Agent response: ${finalResponse.substring(0, 500)}${finalResponse.length > 100 ? '...' : ''}`
             };
 
         } catch (err: any) {
