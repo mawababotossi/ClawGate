@@ -35,5 +35,6 @@ export function loadConfig(configPath: string): GatewayConfig {
         channels: parsed.channels ?? {},
         cron: parsed.cron ?? [],
         gatewayPort: parsed.gatewayPort,
+        configPath: absPath,
     };
 }

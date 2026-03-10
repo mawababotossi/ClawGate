@@ -35,4 +35,5 @@ export interface GatewayConfig {
     cron?: CronJob[];
     gatewayPort?: number;
     ownerWebChatClientId?: string;
+    configPath?: string;
 }

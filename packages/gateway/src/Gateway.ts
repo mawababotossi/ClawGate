@@ -906,9 +906,8 @@ export class Gateway implements IGateway {
 
     private async saveConfig(): Promise<void> {
         // We need to rebuild the full config to save it
-        // This is a bit simplified, we assume the original config path is available
-        const configPath = process.env['CONFIG_PATH'] ?? './config/clawgate.json';
-        const absPath = resolve(configPath);
+        // We use the absolute path provided during config loading (or fallback to guess)
+        const absPath = this.config.configPath ?? resolve(process.env['CONFIG_PATH'] ?? './config/clawgate.json');
 
         const newConfigs = this.registry.listConfigs();
 
@@ -924,7 +923,7 @@ export class Gateway implements IGateway {
         try {
             fs.writeFileSync(tmpPath, JSON.stringify(parsed, null, 4), 'utf8');
             fs.renameSync(tmpPath, absPath);
-            console.log(`[gateway] Configuration persisted atomically to ${configPath}`);
+            console.log(`[gateway] Configuration persisted atomically to ${absPath}`);
         } catch (err) {
             console.error(`[gateway] Failed to save configuration:`, err);
             if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
