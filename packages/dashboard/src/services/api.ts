@@ -274,5 +274,16 @@ export const api = {
     async triggerAgentHeartbeat(name: string): Promise<{ success: boolean; message?: string }> {
         const response = await axios.post(`${API_BASE_URL}/agents/${encodeURIComponent(name)}/heartbeat`);
         return response.data;
+    },
+
+    // ── Message Board ──
+    async getBoardChannels(): Promise<string[]> {
+        const response = await axios.get(`${API_BASE_URL}/board/channels`);
+        return response.data;
+    },
+
+    async getBoardMessages(channel: string, limit = 50): Promise<any[]> {
+        const response = await axios.get(`${API_BASE_URL}/board/${encodeURIComponent(channel)}/messages?limit=${limit}`);
+        return response.data;
     }
 };

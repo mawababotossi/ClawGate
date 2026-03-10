@@ -36,29 +36,44 @@ export class AgentRegistry {
         if (!config.baseDir) {
             config.baseDir = path.join(this.baseDataDir, 'agents', config.name);
         } else if (!path.isAbsolute(config.baseDir)) {
-            // Resolve relative paths against baseDataDir
-            config.baseDir = path.resolve(this.baseDataDir, config.baseDir);
+            // Resolve relative paths against process.cwd() (the gateway launch directory),
+            // NOT against baseDataDir. This ensures paths like ../../data/agents/main resolve
+            // correctly regardless of where baseDataDir points.
+            config.baseDir = path.resolve(config.baseDir);
         }
 
         assertWithinBaseDir(this.baseDataDir, config.baseDir);
 
-        this.ensureAgentFiles(config.baseDir);
+        this.ensureAgentFiles(config.name, config.baseDir);
 
         this.runtimes.set(config.name, new AgentRuntime(config, this.transcripts, this.skillRegistry));
     }
 
-    private ensureAgentFiles(baseDir: string): void {
+    private ensureAgentFiles(agentName: string, baseDir: string): void {
         const workspaceDir = path.join(baseDir, 'workspace');
+        const memoryDir = path.join(workspaceDir, 'memory'); // ← Moved inside workspace
+
         if (!fs.existsSync(workspaceDir)) {
             fs.mkdirSync(workspaceDir, { recursive: true });
         }
-
-        const memoryDir = path.join(baseDir, 'memory');
         if (!fs.existsSync(memoryDir)) {
             fs.mkdirSync(memoryDir, { recursive: true });
         }
 
-        const agentName = path.basename(baseDir);
+        // Cleanup legacy files if they exist in the workspace
+        const legacyFiles = ['chat.md'];
+        for (const f of legacyFiles) {
+            const legacyPath = path.join(workspaceDir, f);
+            if (fs.existsSync(legacyPath)) {
+                try {
+                    fs.unlinkSync(legacyPath);
+                    console.log(`[core/registry] Removed legacy file: ${legacyPath}`);
+                } catch (err) {
+                    // Ignore
+                }
+            }
+        }
+
         const defaultFiles = [
             {
                 name: 'IDENTITY.md',
@@ -122,15 +137,14 @@ This file is located at ~/workspace/AGENTS.md.
 - \`write_file\`: Write files to your workspace
 - \`run_shell_command\`: Execute shell commands (if permitted)
 - \`delegate_task\`: Delegate tasks to other agents
+- **Messaging Tools** (MCP): \`post_message\`, \`read_messages\`, \`list_channels\`
 - And more...
 
 ## Important Paths
 
-- Configuration files: ~/workspace/*.md
-- Memory journals: ~/memory/journal_YYYY-MM-DD.md
-- Workspace root: ~/workspace/
-
-This file is located at ~/workspace/TOOLS.md.
+- Configuration files: \`./*.md\`
+- Memory journals: \`./memory/journal_YYYY-MM-DD.md\`
+- Workspace root: \`./\`
 `
             },
             {
@@ -165,20 +179,22 @@ This file is located at ~/workspace/MEMORY.md and is automatically updated durin
 
 ## What to do during heartbeat
 
-1. Review recent journals in ~/memory/
-2. Distill important facts into MEMORY.md
-3. Check for maintenance tasks
-4. Reply "HEARTBEAT_OK" if nothing to report
+1. Review recent journals in the \`./memory/\` directory.
+2. Distill important facts, preferences, or technical updates into MEMORY.md using the \`updateMemoryFile\` tool.
+3. Read recent messages: Use the **tool** \`read_messages\` with channel="general" or channel="<your-agent-name>".
+4. Post a thought: Use the **tool** \`post_message\` with channel="general" and from="<your-agent-name>".
+5. If everything is fine, reply EXACTLY with "HEARTBEAT_OK".
 
-This file is located at ~/workspace/HEARTBEAT.md.
+IMPORTANT: "read_messages" and "post_message" are MCP tools (functions), not shell commands.
 `
             }
         ];
 
         for (const file of defaultFiles) {
             const filePath = path.join(workspaceDir, file.name);
-            if (!fs.existsSync(filePath)) {
-                // Replace placeholders
+            // HEARTBEAT.md is system-managed: always overwrite so agents get the latest instructions.
+            const alwaysOverwrite = file.name === 'HEARTBEAT.md';
+            if (alwaysOverwrite || !fs.existsSync(filePath)) {
                 const content = file.content.replace(/\${agentName}/g, agentName);
                 fs.writeFileSync(filePath, content);
             }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar, TopBar } from './components';
-import { Dashboard, Agents, Skills, Sessions, WebChat, Logs, Channels, Settings, ComingSoon, CronJobs, Login } from './pages';
+import { Dashboard, Agents, Skills, Sessions, WebChat, Logs, Channels, Settings, ComingSoon, CronJobs, Login, MessageBoard } from './pages';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
@@ -45,6 +45,7 @@ function App() {
               <Route path="/channels" element={<Channels />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/board" element={<MessageBoard />} />
 
               {/* Coming Soon / Placeholder Routes */}
               <Route path="/instances" element={<ComingSoon title="Instances" description="Monitor and manage active OpenClaw instances." />} />

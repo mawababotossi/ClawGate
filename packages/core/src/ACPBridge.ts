@@ -16,7 +16,7 @@ export interface ACPSessionUpdate {
 }
 
 // Default timeout for standard requests (ms)
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 120000; // Increased to 2m for slow init
 
 const PROVIDER_COMMANDS: Record<string, {
     cmd: string;
@@ -65,12 +65,18 @@ export class ACPBridge {
     private pendingRequests: Map<number, { resolve: (val: any) => void; reject: (err: any) => void }> = new Map();
     private updateListeners: Map<string, (update: ACPSessionUpdate) => void> = new Map();
     private readonly ACP_DEBUG = process.env['ACP_DEBUG'] === 'true';
+    private _agentCwd?: string;
 
     constructor(
         private model: string,
         private allowedPermissions: string[] = [],
         private provider: string = DEFAULT_PROVIDER
     ) { }
+
+    /** Set the cwd for the spawned Gemini process — must be called before start() */
+    public setAgentCwd(cwd: string): void {
+        this._agentCwd = cwd;
+    }
 
     public getModel(): string {
         return this.model;
@@ -123,7 +129,7 @@ export class ACPBridge {
         const args = providerDef.args(this.model);
         console.log(`[core/acp] Spawning ${cmd} ${args.join(' ')} (provider: ${providerKey})`);
 
-        this.geminiProcess = spawn(cmd, args, { env });
+        this.geminiProcess = spawn(cmd, args, { env, cwd: this._agentCwd ?? process.cwd() });
 
         if (!this.geminiProcess.stdout || !this.geminiProcess.stdin) {
             throw new Error('[core/acp] Failed to start gemini process or stream I/O');
@@ -166,7 +172,9 @@ export class ACPBridge {
                     const { resolve, reject } = this.pendingRequests.get(msg.id)!;
                     this.pendingRequests.delete(msg.id);
                     if (msg.error) {
-                        reject(new Error(msg.error.message || JSON.stringify(msg.error)));
+                        const err = new Error(msg.error.message || JSON.stringify(msg.error));
+                        (err as any).code = msg.error.code;
+                        reject(err);
                     } else {
                         resolve(msg.result);
                     }
@@ -272,9 +280,12 @@ export class ACPBridge {
         });
     }
 
-    async createSession(cwd: string, mcpServers: any[] = []): Promise<string> {
-
-        const res = await this.request('session/new', { cwd, mcpServers });
+    async createSession(cwd: string, mcpServers: any[] = [], allowedDirectories: string[] = []): Promise<string> {
+        const reqOptions: any = { cwd, mcpServers };
+        if (allowedDirectories && allowedDirectories.length > 0) {
+            reqOptions.allowedDirectories = allowedDirectories;
+        }
+        const res = await this.request('session/new', reqOptions);
         return res.sessionId;
     }
 
@@ -284,16 +295,59 @@ export class ACPBridge {
         onUpdate: (update: ACPSessionUpdate) => void,
         timeoutMs: number = 300000 // 5 minutes default for prompts
     ): Promise<void> {
-        this.updateListeners.set(sessionId, onUpdate);
+        return new Promise<void>((resolve, reject) => {
+            let rpcResolved = false;
+            let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+            const SILENCE_AFTER_RPC_MS = 2000; // 2s without chunk after RPC resolution = done
 
-        try {
-            await this.request('session/prompt', {
+            // Wrapper listener that detects end-of-stream via silence
+            const wrappedListener = (update: ACPSessionUpdate) => {
+                // Reset silence timer on every chunk
+                if (silenceTimer) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = null;
+                }
+
+                onUpdate(update);
+
+                // If RPC already resolved, arm a new silence timer
+                if (rpcResolved) {
+                    silenceTimer = setTimeout(() => {
+                        this.updateListeners.delete(sessionId);
+                        resolve();
+                    }, SILENCE_AFTER_RPC_MS);
+                }
+            };
+
+            this.updateListeners.set(sessionId, wrappedListener);
+
+            // Global timeout guard
+            const globalTimer = setTimeout(() => {
+                if (silenceTimer) clearTimeout(silenceTimer);
+                this.updateListeners.delete(sessionId);
+                reject(new Error(`Prompt timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+
+            this.request('session/prompt', {
                 sessionId,
                 prompt: [{ type: 'text', text }]
-            }, timeoutMs);
-        } finally {
-            this.updateListeners.delete(sessionId);
-        }
+            }, timeoutMs).then(() => {
+                rpcResolved = true;
+                clearTimeout(globalTimer);
+
+                // Arm initial silence timer — if no chunks arrive within 2s, resolve
+                silenceTimer = setTimeout(() => {
+                    this.updateListeners.delete(sessionId);
+                    resolve();
+                }, SILENCE_AFTER_RPC_MS);
+
+            }).catch((err) => {
+                if (silenceTimer) clearTimeout(silenceTimer);
+                clearTimeout(globalTimer);
+                this.updateListeners.delete(sessionId);
+                reject(err);
+            });
+        });
     }
 
     async ping(timeoutMs = 5000): Promise<boolean> {
@@ -304,13 +358,17 @@ export class ACPBridge {
                 resolve(false);
             }, timeoutMs);
 
-            this.request('ping', {}).then(() => {
+            this.request('ping', {}, timeoutMs).then(() => {
                 clearTimeout(timer);
                 resolve(true);
-            }).catch(() => {
-                // Method not found is still a sign of life
+            }).catch((err: any) => {
                 clearTimeout(timer);
-                resolve(true);
+                // -32601 = method not found, but the process IS alive
+                if (err && err.code === -32601) {
+                    resolve(true);
+                } else {
+                    resolve(false); // Real failure
+                }
             });
         });
     }

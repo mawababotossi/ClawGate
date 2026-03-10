@@ -62,13 +62,14 @@
                 {
                     "name": "clawgate-skills",
                     "type": "sse",
-                    "url": "http://localhost:3002/api/mcp/messages",
+                    "url": "http://127.0.0.1:3002/api/mcp/messages",
                     "headers": []
                 }
             ],
             "allowedPermissions": [
                 "google_web_search",
                 "shell",
+                "replace",
                 "terminal",
                 "updateMemoryFile",
                 "delegate_task",
@@ -85,7 +86,10 @@
                 "run_code",
                 "getCurrentTime",
                 "write_host_file",
-                "readMemoryFile"
+                "readMemoryFile",
+                "post_message",
+                "read_messages",
+                "list_channels"
             ],
             "status": "Healthy",
             "skills": [
@@ -97,7 +101,10 @@
             ],
             "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/main",
             "provider": "gemini",
-            "authType": "oauth-personal"
+            "authType": "oauth-personal",
+            "heartbeatRunning": false,
+            "lastHeartbeatAt": 1773162237374,
+            "lastHeartbeatResult": "proactive"
         },
         {
             "name": "scipro",
@@ -111,7 +118,7 @@
                 {
                     "name": "clawgate-skills",
                     "type": "sse",
-                    "url": "http://localhost:3002/api/mcp/messages",
+                    "url": "http://127.0.0.1:3002/api/mcp/messages",
                     "headers": []
                 }
             ],
@@ -125,7 +132,8 @@
                 "write_host_file"
             ],
             "status": "Healthy",
-            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/scipro"
+            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/scipro",
+            "heartbeatRunning": false
         },
         {
             "name": "viral-writer",
@@ -137,7 +145,7 @@
                 {
                     "name": "clawgate-skills",
                     "type": "sse",
-                    "url": "http://localhost:3002/api/mcp/messages",
+                    "url": "http://127.0.0.1:3002/api/mcp/messages",
                     "headers": []
                 }
             ],
@@ -151,20 +159,21 @@
                 "write_host_file"
             ],
             "status": "Healthy",
-            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/viral-writer"
+            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/viral-writer",
+            "heartbeatRunning": false
         },
         {
             "name": "businessman",
             "model": "gemini-3-flash-preview",
             "heartbeat": {
                 "enabled": true,
-                "intervalMinutes": 120
+                "intervalMinutes": 30
             },
             "mcpServers": [
                 {
                     "name": "clawgate-skills",
                     "type": "sse",
-                    "url": "http://localhost:3002/api/mcp/messages",
+                    "url": "http://127.0.0.1:3002/api/mcp/messages",
                     "headers": []
                 }
             ],
@@ -174,8 +183,6 @@
                 "shell",
                 "read_file",
                 "write_file",
-                "read_host_file",
-                "write_host_file",
                 "run_shell_command",
                 "network",
                 "readMemoryFile",
@@ -186,23 +193,27 @@
                 "remove_task",
                 "list_agents",
                 "run_code",
-                "read_skill"
+                "read_skill",
+                "read_messages",
+                "list_channels",
+                "post_message"
             ],
             "status": "Healthy",
-            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/businessman"
+            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/businessman",
+            "heartbeatRunning": false
         },
         {
             "name": "sylvie",
             "model": "gemini-3-flash-preview",
             "heartbeat": {
                 "enabled": true,
-                "intervalMinutes": 120
+                "intervalMinutes": 32
             },
             "mcpServers": [
                 {
                     "name": "clawgate-skills",
                     "type": "sse",
-                    "url": "http://localhost:3002/api/mcp/messages",
+                    "url": "http://127.0.0.1:3002/api/mcp/messages",
                     "headers": []
                 }
             ],
@@ -212,8 +223,6 @@
                 "shell",
                 "read_file",
                 "write_file",
-                "read_host_file",
-                "write_host_file",
                 "run_shell_command",
                 "network",
                 "readMemoryFile",
@@ -224,23 +233,27 @@
                 "remove_task",
                 "list_agents",
                 "run_code",
-                "read_skill"
+                "read_skill",
+                "read_messages",
+                "post_message",
+                "list_channels"
             ],
             "status": "Healthy",
-            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/sylvie"
+            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/sylvie",
+            "heartbeatRunning": false
         },
         {
             "name": "warren",
             "model": "gemini-3-flash-preview",
             "heartbeat": {
                 "enabled": true,
-                "intervalMinutes": 120
+                "intervalMinutes": 34
             },
             "mcpServers": [
                 {
                     "name": "clawgate-skills",
                     "type": "sse",
-                    "url": "http://localhost:3002/api/mcp/messages",
+                    "url": "http://127.0.0.1:3002/api/mcp/messages",
                     "headers": []
                 }
             ],
@@ -250,17 +263,23 @@
                 "shell",
                 "read_file",
                 "write_file",
-                "read_host_file",
-                "write_host_file",
                 "readMemoryFile",
                 "updateMemoryFile",
                 "delegate_task",
                 "schedule_task",
                 "run_shell_command",
-                "network"
+                "network",
+                "remove_task",
+                "list_tasks",
+                "list_agents",
+                "post_message",
+                "read_messages",
+                "list_channels",
+                "run_code"
             ],
             "status": "Healthy",
-            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/warren"
+            "baseDir": "/media/tym/54971b6d-8afb-491d-832c-93faca387626/tym/Lab/clawGate/data/agents/warren",
+            "heartbeatRunning": false
         }
     ],
     "channels": {

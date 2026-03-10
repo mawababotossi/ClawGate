@@ -27,6 +27,7 @@ export const navGroups = [
         label: 'CONTROL',
         items: [
             { path: '/', label: 'Overview', icon: LayoutDashboard },
+            { path: '/board', label: 'Message Board', icon: MessagesSquare },
             { path: '/channels', label: 'Channels', icon: Smartphone },
             { path: '/instances', label: 'Instances', icon: Wifi },
             { path: '/sessions', label: 'Sessions', icon: MessagesSquare },

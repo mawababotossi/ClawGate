@@ -14,8 +14,18 @@ import { Type } from '@google/genai';
 function mapGeminiSchemaToJsonSchema(schema: any): any {
     if (!schema) return {};
 
-    // Simplistic mapping, as genai Schema is similar to JSON Schema
-    const result: any = { type: schema.type === Type.OBJECT ? 'object' : schema.type?.toLowerCase() || 'string' };
+    // Map genai Type enum (numeric) or string names to JSON Schema types
+    let type = 'string';
+    const raw = schema.type;
+
+    if (raw === Type.OBJECT || raw === 'OBJECT' || raw === 'object') type = 'object';
+    else if (raw === Type.ARRAY || raw === 'ARRAY' || raw === 'array') type = 'array';
+    else if (raw === Type.NUMBER || raw === 'NUMBER' || raw === 'number') type = 'number';
+    else if (raw === Type.INTEGER || raw === 'INTEGER' || raw === 'integer') type = 'integer';
+    else if (raw === Type.BOOLEAN || raw === 'BOOLEAN' || raw === 'boolean') type = 'boolean';
+    else if (raw === Type.STRING || raw === 'STRING' || raw === 'string') type = 'string';
+
+    const result: any = { type };
 
     if (schema.description) result.description = schema.description;
     if (schema.properties) {
@@ -67,6 +77,11 @@ export class SkillMcpServer {
                 description: decl.description,
                 inputSchema: mapGeminiSchemaToJsonSchema(decl.parameters)
             }));
+
+            console.log(`[skills/mcp] ListTools for agent=${agentName}: served ${tools.length} tools. (Whitelist: ${whitelist?.join(',')})`);
+            if (tools.length > 0) {
+                console.log(`[skills/mcp] Tools served: ${tools.map(t => t.name).join(', ')}`);
+            }
 
             return { tools };
         });
@@ -147,23 +162,22 @@ export class SkillMcpServer {
      * Handle incoming JSON-RPC messages (POST request)
      */
     async handleMessage(req: any, res: any) {
-        const sessionId = req.query.sessionId;
+        const sessionId = req.query.sessionId as string;
         const transport = this.transports.get(sessionId);
-
-        if (!transport) {
-            console.warn(`[skills/mcp] Transport not found for session ${sessionId}`);
-            res.status(404).json({ error: 'Session not found' });
-            return;
-        }
 
         // Extract agent context from headers (passed by Gateway/AgentRuntime)
         const agentName = req.headers['x-agent-name'] as string;
         const whitelistStr = req.headers['x-agent-skills'] as string;
         const whitelist = whitelistStr ? whitelistStr.split(',') : undefined;
 
-        // The MCP SDK doesn't natively support passing context through handlePostMessage easily
-        // but we can "hijack" the request to include it for our handlers.
+        // Pass context through the request object
         (req as any).agentContext = { agentName, whitelist };
+
+        if (!transport) {
+            console.warn(`[skills/mcp] Transport not found for session ${sessionId}. Request headers:`, req.headers);
+            res.status(404).json({ error: 'Session not found', sessionId });
+            return;
+        }
 
         await transport.handlePostMessage(req, res);
     }

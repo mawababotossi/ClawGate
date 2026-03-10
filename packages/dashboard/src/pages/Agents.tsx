@@ -22,6 +22,10 @@ const ALL_PERMISSIONS = [
     { id: 'delegate_task', label: 'delegate_task', desc: 'Delegate to another agent' },
     { id: 'schedule_task', label: 'schedule_task', desc: 'Schedule a cron task' },
     { id: 'google_web_search', label: 'google_web_search', desc: 'Search the web' },
+    // ── Inter-agent messaging ─────────────────────────────────
+    { id: 'post_message', label: 'post_message', desc: 'Post messages to shared inter-agent channels' },
+    { id: 'read_messages', label: 'read_messages', desc: 'Read messages from inter-agent channels' },
+    { id: 'list_channels', label: 'list_channels', desc: 'List active inter-agent message channels' },
 ];
 
 const CHANNEL_COLORS: Record<string, string> = {

@@ -37,6 +37,10 @@ export class AgentRuntime extends EventEmitter {
     private systemPromptCache: string | null = null;
     private systemPromptMtime: Map<string, number> = new Map();
 
+    private heartbeatRunning = false;
+    public lastHeartbeatAt?: number;
+    public lastHeartbeatResult?: 'ok' | 'proactive' | 'failed';
+
     constructor(
         config: AgentConfig,
         transcripts: TranscriptStore,
@@ -64,7 +68,12 @@ export class AgentRuntime extends EventEmitter {
     }
 
     getConfig(): AgentConfig {
-        return this.config;
+        return {
+            ...this.config,
+            lastHeartbeatAt: this.lastHeartbeatAt,
+            lastHeartbeatResult: this.lastHeartbeatResult,
+            heartbeatRunning: this.heartbeatRunning
+        } as AgentConfig;
     }
 
     getStatus(): AgentConfig['status'] {
@@ -79,6 +88,7 @@ export class AgentRuntime extends EventEmitter {
                 this.config.allowedPermissions ?? [],
                 this.config.provider ?? 'gemini'
             );
+
             await bridge.start({
                 authType: this.config.authType,
                 apiKey: this.config.apiKey
@@ -121,6 +131,10 @@ export class AgentRuntime extends EventEmitter {
                 if (s.url && s.url.includes('/api/mcp/messages')) {
                     headerMap['x-agent-name'] = agentName;
                     headerMap['x-agent-skills'] = agentSkills;
+
+                    // Inject the API token for authentication if available
+                    const token = process.env.CLAWGATE_API_TOKEN || process.env.VITE_API_TOKEN || 'you_are_welcome';
+                    headerMap['Authorization'] = `Bearer ${token}`;
                 }
 
                 // Final conversion to [{ name, value }, ...]
@@ -135,7 +149,16 @@ export class AgentRuntime extends EventEmitter {
                 };
             });
 
-            const acpSessionId = await bridge.createSession(cwd, acpMcpServers);
+            const allowedDirs: string[] = [];
+            if (this.config.baseDir) {
+                const workspaceDir = path.resolve(this.config.baseDir, 'workspace');
+                // The workspace root (CWD) MUST be in allowedDirs for internal tools to read files there
+                allowedDirs.push(workspaceDir);
+                // memory is now inside workspace
+                allowedDirs.push(path.join(workspaceDir, 'memory'));
+            }
+
+            const acpSessionId = await bridge.createSession(cwd, acpMcpServers, allowedDirs);
             this.sessionMap.set(userSessionId, acpSessionId);
         }
         return this.sessionMap.get(userSessionId)!;
@@ -231,6 +254,16 @@ CRITICAL: You are an autonomous agent running within the ClawGate platform.
             if (skillsBlock) {
                 p += skillsBlock;
             }
+        }
+
+        // Inject inter-agent messaging info - steer towards tool calling
+        p += `\n\n<additional_tools_instruction>\nCRITICAL: You have access to new **MCP Tools** for inter-agent communication: "post_message", "read_messages", and "list_channels". \nThese are FUNCTION CALLS, NOT shell commands. Always check your toolkit for these before assuming they are missing.\n</additional_tools_instruction>\n`;
+
+        // Inject absolute paths so the agent doesn't use ~/memory/ which resolves incorrectly
+        if (this.config.baseDir) {
+            const workspaceAbs = path.resolve(this.config.baseDir, 'workspace');
+            const memoryAbs = path.resolve(workspaceAbs, 'memory'); // inside workspace
+            p += `\n\n<agent_paths>\nIMPORTANT: These are the REAL absolute paths on this system. Use them with file tools and shell commands.\n- Workspace directory (your config files): ${workspaceAbs}\n- Memory/journals directory: ${memoryAbs}\n- Journal files: ${memoryAbs}/journal_YYYY-MM-DD.md\nDo NOT use ~/memory/ or ~/workspace/ — use these absolute paths instead.\n</agent_paths>`;
         }
 
         this.systemPromptCache = p.trim();
@@ -747,6 +780,39 @@ CRITICAL: You are an autonomous agent running within the ClawGate platform.
         return allAlive;
     }
 
+    private buildJournalContext(baseDir: string): string {
+        const memoryDir = path.join(baseDir, 'memory');
+        if (!fs.existsSync(memoryDir)) return '';
+
+        const files = fs.readdirSync(memoryDir)
+            .filter(f => f.startsWith('journal_') && f.endsWith('.md'))
+            .sort()
+            .slice(-3);
+
+        if (!files.length) return '';
+        return `\nRecent daily journals: ${files.join(', ')}. Use "readMemoryFile" to distill into MEMORY.md if needed.\n`;
+    }
+
+    private buildHeartbeatPrompt(systemPrompt: string, journalContext: string, isManual = false): string {
+        const manualNote = isManual
+            ? '\n5. This is a MANUAL heartbeat triggered by the user via the dashboard.'
+            : '';
+        return `
+<system_instructions>
+${systemPrompt}
+</system_instructions>
+
+<user_input>
+[System Heartbeat${isManual ? ' - MANUAL TRIGGER' : ''}]:
+1. Check your tools and instructions.
+2. ${journalContext ? 'Review your recent daily journals (see <agent_paths> for exact paths).' : 'Check your memory files.'}
+3. Distill important facts, preferences, or technical updates into MEMORY.md using the \`updateMemoryFile\` tool.
+4. Read recent messages from the board: use \`read_messages\` with channel="general" and channel="<your-agent-name>" for directed messages.
+5. Post a thought or update: use \`post_message\` with channel="general" and from="<your-agent-name>".
+6. If everything is fine and you don't need to notify the user, reply EXACTLY with "HEARTBEAT_OK".${manualNote}
+</user_input>`.trim();
+    }
+
     private startHeartbeat(): void {
         let pattern: string;
         if (this.config.heartbeat?.cron) {
@@ -764,42 +830,24 @@ CRITICAL: You are an autonomous agent running within the ClawGate platform.
         }
 
         const loop = async () => {
+            if (this.heartbeatRunning) {
+                console.warn(`[core/runtime] Skipping scheduled heartbeat for ${this.config.name} — already running`);
+                return;
+            }
+            this.heartbeatRunning = true;
             try {
                 const isAlive = await this.checkHealth();
                 if (!isAlive) return;
 
                 console.log(`[core/runtime] Starting heartbeat/distillation for ${this.config.name}`);
 
-                // Use a fresh heartbeat session with its own bridge if needed
+                // Use the shared __heartbeat__ bridge/session
                 const bridge = await this.getBridge('__heartbeat__');
                 const acpSessionId = await this.getSessionId('__heartbeat__', bridge);
 
                 const systemPrompt = this.loadSystemPrompt();
-
-                // Distillation context: notify the agent about recent journal files
-                let journalContext = '';
-                if (this.config.baseDir) {
-                    const memoryDir = path.join(this.config.baseDir, 'memory');
-                    if (fs.existsSync(memoryDir)) {
-                        const files = fs.readdirSync(memoryDir).filter(f => f.endsWith('.md')).sort().reverse().slice(0, 3);
-                        if (files.length > 0) {
-                            journalContext = `\nRecent daily journals found: ${files.join(', ')}. Use "readMemoryFile" if you need to distill them into MEMORY.md.\n`;
-                        }
-                    }
-                }
-
-                const promptText = `
-<system_instructions>
-${systemPrompt}
-</system_instructions>
-
-<user_input>
-[System Heartbeat]:
-1. Check your tools and instructions.
-2. ${journalContext ? 'Review your recent daily journals.' : 'Check your memory files.'}
-3. Distill important facts, preferences, or technical updates into your long-term MEMORY.md file.
-4. If everything is fine and you don't need to notify the user, reply EXACTLY with "HEARTBEAT_OK".
-</user_input>`.trim();
+                const journalContext = this.config.baseDir ? this.buildJournalContext(this.config.baseDir) : '';
+                const promptText = this.buildHeartbeatPrompt(systemPrompt, journalContext, false);
 
                 let responseText = '';
                 await bridge.prompt(acpSessionId, promptText, (update: any) => {
@@ -810,6 +858,9 @@ ${systemPrompt}
 
                 const finalResponse = responseText.trim();
                 console.log(`[core/runtime] Heartbeat for ${this.config.name} completed. Response: ${finalResponse.substring(0, 50)}...`);
+
+                this.lastHeartbeatAt = Date.now();
+                this.lastHeartbeatResult = finalResponse === 'HEARTBEAT_OK' ? 'ok' : 'proactive';
 
                 if (finalResponse !== 'HEARTBEAT_OK' && finalResponse !== '') {
                     // Proactive message
@@ -823,6 +874,9 @@ ${systemPrompt}
             } catch (err) {
                 console.error(`[core/runtime] Heartbeat failed for ${this.config.name}:`, err);
                 this._status = 'Unresponsive';
+                this.lastHeartbeatResult = 'failed';
+            } finally {
+                this.heartbeatRunning = false;
             }
         };
 
@@ -837,14 +891,17 @@ ${systemPrompt}
         if (!this.config.baseDir) {
             return { success: false, message: 'No base directory configured' };
         }
+        if (this.heartbeatRunning) {
+            return { success: false, message: 'A heartbeat is already running for this agent.' };
+        }
+        this.heartbeatRunning = true;
 
         console.log(`[core/runtime] Manual heartbeat triggered for ${this.config.name}`);
 
         try {
-            // Créer un bridge temporaire pour le heartbeat
-            const sessionId = `heartbeat_manual_${Date.now()}`;
-            const bridge = await this.getBridge(sessionId);
-            const acpSessionId = await this.getSessionId(sessionId, bridge);
+            // Reuse the shared __heartbeat__ bridge/session
+            const bridge = await this.getBridge('__heartbeat__');
+            const acpSessionId = await this.getSessionId('__heartbeat__', bridge);
 
             // Charger le system prompt avec les fichiers de config
             let peerAgents: { name: string; model: string }[] = [];
@@ -855,40 +912,8 @@ ${systemPrompt}
 
             const systemPrompt = this.loadSystemPrompt();
 
-            // Construire le contexte des journaux récents
-            const memoryDir = path.join(this.config.baseDir, 'memory');
-            let journalContext = '';
-
-            if (fs.existsSync(memoryDir)) {
-                const journalFiles = fs.readdirSync(memoryDir)
-                    .filter(f => f.startsWith('journal_') && f.endsWith('.md'))
-                    .sort()
-                    .slice(-3); // 3 derniers journaux
-
-                if (journalFiles.length > 0) {
-                    journalContext = '\n<recent_journals>\n';
-                    for (const jf of journalFiles) {
-                        const jPath = path.join(memoryDir, jf);
-                        journalContext += `\n## ${jf}\n${fs.readFileSync(jPath, 'utf8').trim()}\n`;
-                    }
-                    journalContext += '\n</recent_journals>\n';
-                    journalContext += `Use "readMemoryFile" if you need to distill them into MEMORY.md.\n`;
-                }
-            }
-
-            const promptText = `
-<system_instructions>
-${systemPrompt}
-</system_instructions>
-
-<user_input>
-[System Heartbeat - MANUAL TRIGGER]:
-1. Check your tools and instructions.
-2. ${journalContext ? 'Review your recent daily journals.' : 'Check your memory files.'}
-3. Distill important facts, preferences, or technical updates into your long-term MEMORY.md file.
-4. If everything is fine and you don't need to notify the user, reply EXACTLY with "HEARTBEAT_OK".
-5. This is a MANUAL heartbeat triggered by the user via the dashboard.
-</user_input>`.trim();
+            const journalContext = this.buildJournalContext(this.config.baseDir);
+            const promptText = this.buildHeartbeatPrompt(systemPrompt, journalContext, true);
 
             let responseText = '';
             await bridge.prompt(acpSessionId, promptText, (update: any) => {
@@ -900,6 +925,9 @@ ${systemPrompt}
             const finalResponse = responseText.trim();
             console.log(`[core/runtime] Manual heartbeat for ${this.config.name} completed. Response: ${finalResponse.substring(0, 50)}...`);
 
+            this.lastHeartbeatAt = Date.now();
+            this.lastHeartbeatResult = finalResponse === 'HEARTBEAT_OK' ? 'ok' : 'proactive';
+
             // Émettre un événement proactif si nécessaire
             if (finalResponse !== 'HEARTBEAT_OK' && finalResponse !== '') {
                 this.emit('agent_proactive_message', {
@@ -909,15 +937,6 @@ ${systemPrompt}
             }
 
             this._status = 'Healthy';
-
-            // Nettoyer le bridge temporaire après un délai
-            setTimeout(() => {
-                if (this.bridges.has(sessionId)) {
-                    this.bridges.get(sessionId)?.stop();
-                    this.bridges.delete(sessionId);
-                    this.sessionMap.delete(sessionId);
-                }
-            }, 5000);
 
             return {
                 success: true,
@@ -929,10 +948,13 @@ ${systemPrompt}
         } catch (err: any) {
             console.error(`[core/runtime] Manual heartbeat failed for ${this.config.name}:`, err);
             this._status = 'Unresponsive';
+            this.lastHeartbeatResult = 'failed';
             return {
                 success: false,
                 message: `Heartbeat failed: ${err.message}`
             };
+        } finally {
+            this.heartbeatRunning = false;
         }
     }
 

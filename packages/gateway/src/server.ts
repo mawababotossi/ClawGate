@@ -47,13 +47,22 @@ function broadcastLog(level: string, ...args: any[]) {
     // Always call original console
     originalConsole[level as keyof typeof originalConsole](...args);
 
+    const logText = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+
+    // Write to a debug file
+    try {
+        fs.appendFileSync('/tmp/clawgate.log', `[${level.toUpperCase()}] ${logText}\n`);
+    } catch (e) {
+        // Ignore write errors
+    }
+
     // Filter broadcast and buffer based on LOG_LEVEL
     if (currentLevel < MIN_LOG_LEVEL) return;
 
     const entry: LogEntry = {
         timestamp: new Date().toISOString(),
         level,
-        text: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')
+        text: logText
     };
 
     logBuffer.push(entry);
@@ -609,8 +618,30 @@ async function main(): Promise<void> {
                 } else {
                     console.warn(`[gateway] Manual heartbeat for ${agentName} finished with failure: ${hbRes.message || 'unknown'}`);
                 }
+
+                // Broadcast result to all SSE log clients
+                const event = JSON.stringify({
+                    level: hbRes.success ? 'info' : 'warn',
+                    label: 'heartbeat',
+                    message: `[${agentName}] ${hbRes.message ?? 'done'}`,
+                    timestamp: new Date().toISOString()
+                });
+                for (const client of logClients) {
+                    client.write(`data: ${event}\n\n`);
+                }
             }).catch((err: any) => {
                 console.error(`[gateway] Manual heartbeat for ${agentName} failed:`, err);
+
+                // Broadcast error to all SSE log clients
+                const event = JSON.stringify({
+                    level: 'error',
+                    label: 'heartbeat',
+                    message: `[${agentName}] heartbeat failed: ${err.message}`,
+                    timestamp: new Date().toISOString()
+                });
+                for (const client of logClients) {
+                    client.write(`data: ${event}\n\n`);
+                }
             });
         } catch (err: any) {
             res.status(500).json({ error: err.message });
@@ -637,6 +668,25 @@ async function main(): Promise<void> {
     });
 
     // --- Unified Skill Management API ---
+
+    // --- Message Board API ---
+    app.get('/api/board/channels', (req, res) => {
+        try {
+            res.json(gateway.board.listChannels());
+        } catch (err: any) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.get('/api/board/:channel/messages', (req, res) => {
+        try {
+            const limit = parseInt(req.query.limit as string) || 50;
+            const messages = gateway.board.read(req.params.channel, limit);
+            res.json(messages);
+        } catch (err: any) {
+            res.status(500).json({ error: err.message });
+        }
+    });
 
     // Lister tous les skills avec leur statut unifié
     app.get('/api/skills', (req, res) => {

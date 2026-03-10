@@ -24,6 +24,7 @@ import { resolve } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { MessageQueue } from './MessageQueue.js';
+import { MessageBoard } from './MessageBoard.js';
 import type { GatewayConfig, ChannelConfig, CronJob } from './types.js';
 import { NodeManager } from './NodeManager.js';
 import type { WebSocket } from 'ws';
@@ -47,6 +48,7 @@ export class Gateway implements IGateway {
     private channelConfigs: Record<string, ChannelConfig> = {};
     private nodeManager: NodeManager;
     private waConnected = false;
+    public board: MessageBoard;
 
     constructor(private config: GatewayConfig) {
         this.sessions = new SessionStore(config.dataDir);
@@ -59,11 +61,14 @@ export class Gateway implements IGateway {
 
         this.mcpServer = new SkillMcpServer(this.skillRegistry);
 
+        // Init message board (persists to dataDir)
+        this.board = new MessageBoard(config.dataDir);
+
         // Register a builtin test skill
         this.registerBuiltinSkills();
 
         const apiPort = config.gatewayPort ?? 3002;
-        const localMcpUrl = `http://localhost:${apiPort}/api/mcp/messages`;
+        const localMcpUrl = `http://127.0.0.1:${apiPort}/api/mcp/messages`;
         const makeMcpServerEntry = () => ({
             name: 'clawgate-skills',
             type: 'sse',
@@ -649,6 +654,116 @@ export class Gateway implements IGateway {
         this.skillRegistry.register(removeTaskSkill);
         this.skillRegistry.register(listAgentsSkill);
         this.skillRegistry.register(readSkillSkill);
+
+        // ── MessageBoard skills ───────────────────────────────────────────
+        const postMessageSkill: Skill = {
+            name: 'post_message',
+            description:
+                'Post a message to a shared inter-agent channel. ' +
+                'Other agents can read it. Use channel "general" for broadcasts, ' +
+                'or a specific agent name for directed messages (e.g., "businessman").',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    channel: {
+                        type: Type.STRING,
+                        description:
+                            'The channel name. Use "general" for all agents, ' +
+                            'or an agent name for directed messages.'
+                    },
+                    from: {
+                        type: Type.STRING,
+                        description: 'Your agent name (so others know who wrote the message).'
+                    },
+                    text: {
+                        type: Type.STRING,
+                        description: 'The message content.'
+                    },
+                    replyTo: {
+                        type: Type.STRING,
+                        description: 'Optional: the ID of the message you are replying to.'
+                    }
+                },
+                required: ['channel', 'from', 'text']
+            },
+            execute: async (args) => {
+                const msg = this.board.post(
+                    args.channel as string,
+                    args.from as string,
+                    args.text as string,
+                    args.replyTo as string | undefined
+                );
+                console.log(`[board] ${msg.from} → #${msg.channel}: ${msg.text.substring(0, 80)}`);
+                return { success: true, messageId: msg.id, timestamp: msg.timestamp };
+            },
+            kind: 'native'
+        };
+
+        const readMessagesSkill: Skill = {
+            name: 'read_messages',
+            description:
+                'Read recent messages from a shared inter-agent channel. ' +
+                'Use channel "general" for broadcast messages, or your own agent name ' +
+                'to check messages directed at you.',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    channel: {
+                        type: Type.STRING,
+                        description: 'The channel to read from.'
+                    },
+                    limit: {
+                        type: Type.NUMBER,
+                        description: 'Max messages to return (default: 20, max: 50).'
+                    },
+                    since: {
+                        type: Type.NUMBER,
+                        description:
+                            'Optional Unix timestamp (ms). Only return messages newer than this.'
+                    }
+                },
+                required: ['channel']
+            },
+            execute: async (args) => {
+                const msgs = this.board.read(
+                    args.channel as string,
+                    (args.limit as number) || 20,
+                    args.since as number | undefined
+                );
+                return {
+                    channel: args.channel,
+                    count: msgs.length,
+                    messages: msgs.map(m => ({
+                        id: m.id,
+                        from: m.from,
+                        text: m.text,
+                        timestamp: m.timestamp,
+                        replyTo: m.replyTo,
+                        formatted: `[${new Date(m.timestamp).toISOString()}] ${m.from}: ${m.text}`
+                    }))
+                };
+            },
+            kind: 'native'
+        };
+
+        const listChannelsSkill: Skill = {
+            name: 'list_channels',
+            description: 'List all active message board channels.',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {},
+                required: []
+            },
+            execute: async () => ({
+                channels: this.board.listChannels()
+            }),
+            kind: 'native'
+        };
+
+        this.skillRegistry.register(postMessageSkill);
+        this.skillRegistry.register(readMessagesSkill);
+        this.skillRegistry.register(listChannelsSkill);
+
         const declarations = this.skillRegistry.getDeclarations() || [];
         console.log(`[gateway] Registered builtin skills: ${declarations.map(d => d.name).join(', ')}`);
     }
