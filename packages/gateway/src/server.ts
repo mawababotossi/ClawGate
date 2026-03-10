@@ -603,7 +603,13 @@ async function main(): Promise<void> {
             // Reply immediately — the heartbeat session can take 60+ seconds
             res.status(202).json({ success: true, message: `Heartbeat triggered for ${agentName}. Check logs for results.` });
             // Run in background
-            (runtime as any).triggerManualHeartbeat().catch((err: any) => {
+            (runtime as any).triggerManualHeartbeat().then((hbRes: any) => {
+                if (hbRes.success) {
+                    console.log(`[gateway] Manual heartbeat for ${agentName} completed successfully: ${hbRes.message || 'OK'}`);
+                } else {
+                    console.warn(`[gateway] Manual heartbeat for ${agentName} finished with failure: ${hbRes.message || 'unknown'}`);
+                }
+            }).catch((err: any) => {
                 console.error(`[gateway] Manual heartbeat for ${agentName} failed:`, err);
             });
         } catch (err: any) {
